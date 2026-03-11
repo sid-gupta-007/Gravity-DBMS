@@ -1,11 +1,9 @@
-/* The invisible full-screen wrapper */
 .wrapper {
 	position: absolute;
 	inset: 0;
 	pointer-events: none;
 	overflow: hidden;
 	z-index: 50;
-	/* Use system UI fonts for that crisp Shadcn/Geist look */
 	font-family:
 		ui-sans-serif,
 		system-ui,
@@ -22,7 +20,7 @@
 .stage {
 	position: absolute;
 	left: 50%;
-	top: 50%;
+	top: 45%;
 	transform: translate(-50%, -50%);
 	width: 100%;
 	max-width: 600px; /* Slightly tighter width for elegance */
@@ -39,14 +37,15 @@
 	transform: translate(-50%, calc(-100% - 48px));
 }
 
-/* The Vercel-style Title */
 .title {
 	color: #ffffff;
-	font-size: 2.5rem;
-	font-weight: 700;
-	letter-spacing: -0.04em; /* Tight tracking is key to this aesthetic */
+	font-size: 6rem;
+	font-weight: 300;
 	margin-bottom: 2rem;
 	transition: all 0.5s ease;
+	letter-spacing: -0.4px;
+	font-family: "Clash Display", sans-serif;
+	text-transform: uppercase;
 }
 
 .titleHidden {
