@@ -7,7 +7,7 @@ export default function ChatInterface({ gravityActive, setGravityActive }) {
 	const handleSubmit = (e) => {
 		e.preventDefault();
 		if (!query.trim()) return;
-		setGravityActive(true); // Triggers the move to the bottom
+		setGravityActive(true);
 	};
 
 	return (
@@ -18,7 +18,7 @@ export default function ChatInterface({ gravityActive, setGravityActive }) {
 				<h1
 					className={`${styles.title} ${gravityActive ? styles.titleHidden : ""}`}
 				>
-					GRAVITY<span>_</span>
+					Gravity
 				</h1>
 
 				<form
@@ -29,15 +29,18 @@ export default function ChatInterface({ gravityActive, setGravityActive }) {
 						type="text"
 						value={query}
 						onChange={(e) => setQuery(e.target.value)}
-						placeholder="Query the void..."
+						placeholder="Ask Gravity anything..."
 						className={styles.inputField}
 					/>
 					<button type="submit" className={styles.submitBtn}>
+						{/* Minimalist Vercel-style Up Arrow */}
 						<svg
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
 							strokeWidth="2.5"
+							strokeLinecap="round"
+							strokeLinejoin="round"
 						>
 							<path d="M12 19V5M5 12l7-7 7 7" />
 						</svg>

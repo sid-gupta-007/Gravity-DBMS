@@ -5,112 +5,122 @@
 	pointer-events: none;
 	overflow: hidden;
 	z-index: 50;
+	/* Use system UI fonts for that crisp Shadcn/Geist look */
+	font-family:
+		ui-sans-serif,
+		system-ui,
+		-apple-system,
+		BlinkMacSystemFont,
+		"Segoe UI",
+		Roboto,
+		"Helvetica Neue",
+		Arial,
+		sans-serif;
 }
 
-/* The moving stage that holds the title and input */
+/* The moving stage */
 .stage {
 	position: absolute;
 	left: 50%;
 	top: 50%;
-	transform: translate(-50%, -50%); /* Dead center */
+	transform: translate(-50%, -50%);
 	width: 100%;
-	max-width: 650px;
+	max-width: 600px; /* Slightly tighter width for elegance */
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); /* Cinematic ease */
+	transition:
+		transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+		top 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* State 2: Snaps to the bottom */
 .stageActive {
 	top: 100%;
-	transform: translate(
-		-50%,
-		calc(-100% - 40px)
-	); /* 40px floating above bottom */
+	transform: translate(-50%, calc(-100% - 48px));
 }
 
-/* The Glowing Title */
+/* The Vercel-style Title */
 .title {
-	color: white;
-	font-size: 3rem;
-	font-weight: 900;
-	letter-spacing: 0.4em;
+	color: #ffffff;
+	font-size: 2.5rem;
+	font-weight: 700;
+	letter-spacing: -0.04em; /* Tight tracking is key to this aesthetic */
 	margin-bottom: 2rem;
 	transition: all 0.5s ease;
-	text-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
 }
 
-.title span {
-	color: #00f0ff;
-}
-
-/* State 2: Title fades out and scales down */
 .titleHidden {
 	opacity: 0;
-	transform: scale(0.8) translateY(-20px);
+	transform: scale(0.95) translateY(-10px);
 	pointer-events: none;
 }
 
-/* The Input Bar */
+/* The Minimalist Input Container */
 .searchBar {
 	width: 100%;
-	height: 64px;
-	background: rgba(15, 15, 20, 0.65);
-	backdrop-filter: blur(16px);
-	-webkit-backdrop-filter: blur(16px);
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	border-radius: 32px;
+	height: 56px;
+	background: rgba(9, 9, 11, 0.6); /* Zinc 950 */
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 9999px; /* Pill shape */
 	display: flex;
 	align-items: center;
-	padding: 0 16px 0 32px;
-	pointer-events: auto; /* Re-enable clicks */
-	box-shadow:
-		0 10px 40px rgba(0, 0, 0, 0.5),
-		inset 0 1px 0 rgba(255, 255, 255, 0.1);
-	transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	padding: 0 12px 0 24px;
+	pointer-events: auto;
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+	transition:
+		width 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+		border-color 0.2s ease;
 }
 
-/* State 2: Input bar shrinks slightly when at the bottom */
+.searchBar:focus-within {
+	border-color: rgba(255, 255, 255, 0.3); /* Subtle highlight on focus */
+}
+
 .searchBarActive {
-	width: 85%;
+	width: 90%;
 }
 
+/* The Input Field */
 .inputField {
 	flex: 1;
 	background: transparent;
 	border: none;
 	outline: none;
-	color: white;
-	font-family: "Courier New", monospace; /* Or JetBrains Mono */
-	font-size: 1.1rem;
+	color: #f4f4f5; /* Zinc 50 */
+	font-size: 0.95rem;
+	font-weight: 400;
+	letter-spacing: -0.01em;
 }
 
 .inputField::placeholder {
-	color: rgba(255, 255, 255, 0.3);
+	color: #71717a; /* Zinc 500 */
 }
 
+/* The High-Contrast Submit Button */
 .submitBtn {
-	background: rgba(0, 240, 255, 0.1);
-	border: 1px solid rgba(0, 240, 255, 0.3);
-	color: #00f0ff;
-	width: 40px;
-	height: 40px;
+	background: #ffffff;
+	color: #09090b; /* Zinc 950 icon */
+	width: 34px;
+	height: 34px;
 	border-radius: 50%;
+	border: none;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
-	transition: all 0.2s;
+	transition:
+		transform 0.2s ease,
+		opacity 0.2s ease;
 }
 
 .submitBtn:hover {
-	background: #00f0ff;
-	color: #000;
-	box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+	transform: scale(1.05);
+	opacity: 0.9;
 }
 
 .submitBtn svg {
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 }
