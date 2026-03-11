@@ -11,12 +11,15 @@ import {
 
 const STAR_COUNT = 1500;
 
-// Multiply by 4 to push the colors into HDR territory for the Bloom to catch
 const CATEGORIES = [
-	{ name: "Engineering", color: new THREE.Color(0x00f0ff).multiplyScalar(4) },
-	{ name: "Marketing", color: new THREE.Color(0xffaa00).multiplyScalar(4) },
-	// Pump the red multiplier up to 10 or 12 to force it to glow
-	{ name: "Design", color: new THREE.Color(0xff003c).multiplyScalar(10) },
+	// White stays low because it inherently triggers maximum bloom
+	{ name: "Engineering", color: new THREE.Color(0xffffff).multiplyScalar(1.2) },
+
+	// Indigo gets a slight bump
+	{ name: "Marketing", color: new THREE.Color(0x818cf8).multiplyScalar(1.8) },
+
+	// Purple gets absolute maximum voltage to force the engine to see it
+	{ name: "Design", color: new THREE.Color(0xc084fc).multiplyScalar(6) },
 ];
 
 const tempObject = new THREE.Object3D();

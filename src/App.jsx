@@ -22,8 +22,16 @@ export default function App() {
 				<color attach="background" args={["#020202"]} />
 				<Universe triggerGravity={gravityActive} />
 				<OrbitControls makeDefault enableDamping dampingFactor={0.05} />
+				{/* The Cinematic Glow Engine - Tuned for Minimalism */}
 				<EffectComposer disableNormalPass>
-					<Bloom luminanceThreshold={0.5} mipmapBlur intensity={2} />
+					<Bloom
+						luminanceThreshold={0.4}
+						mipmapBlur
+						intensity={
+							0.6
+						} /* Dropped from 2.0 to 0.6 for a much tighter, softer glow */
+						radius={0.4}
+					/>
 				</EffectComposer>
 			</Canvas>
 
