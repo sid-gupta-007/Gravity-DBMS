@@ -5,6 +5,7 @@ import { EffectComposer, Bloom } from "@react-three/postprocessing"; // Added th
 import Universe from "./components/Universe";
 import ChatInterface from "./components/ChatInterface";
 
+// App.jsx
 export default function App() {
 	const [gravityActive, setGravityActive] = useState(false);
 
@@ -17,27 +18,20 @@ export default function App() {
 				position: "relative",
 			}}
 		>
+			<Canvas camera={{ position: [0, 0, 120], fov: 60 }}>
+				<color attach="background" args={["#020202"]} />
+				<Universe triggerGravity={gravityActive} />
+				<OrbitControls makeDefault enableDamping dampingFactor={0.05} />
+				<EffectComposer disableNormalPass>
+					<Bloom luminanceThreshold={0.5} mipmapBlur intensity={2} />
+				</EffectComposer>
+			</Canvas>
+
+			{/* Move the UI HERE, below the Canvas */}
 			<ChatInterface
 				gravityActive={gravityActive}
 				setGravityActive={setGravityActive}
 			/>
-
-			<Canvas camera={{ position: [0, 0, 120], fov: 60 }}>
-				<color attach="background" args={["#020202"]} />
-
-				<Universe triggerGravity={gravityActive} />
-
-				<OrbitControls makeDefault enableDamping dampingFactor={0.05} />
-
-				{/* The Cinematic Glow Engine */}
-				<EffectComposer disableNormalPass>
-					<Bloom
-						luminanceThreshold={1} // Only glows things with color > 1 (our nodes)
-						mipmapBlur // Buttery smooth, expensive-looking blur
-						intensity={2} // How far the light bleeds
-					/>
-				</EffectComposer>
-			</Canvas>
 		</div>
 	);
 }
