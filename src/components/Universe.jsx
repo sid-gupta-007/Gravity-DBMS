@@ -22,31 +22,38 @@ const tempObject = new THREE.Object3D();
 export default function Universe({ triggerGravity }) {
 	const meshRef = useRef();
 
-	// 1. Generate Data with saved Initial Coordinates (ix, iy, iz)
 	const [nodes] = useState(() => {
 		return Array.from({ length: STAR_COUNT }, (_, i) => {
 			const cat = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-			const rx = (Math.random() - 0.5) * 150;
-			const ry = (Math.random() - 0.5) * 150;
-			const rz = (Math.random() - 0.5) * 150;
+
+			// Upgraded to true spherical Math so the dispersed galaxy is perfectly round
+			const radius = 20 + Math.random() * 80;
+			const theta = Math.random() * 2 * Math.PI;
+			const phi = Math.acos(Math.random() * 2 - 1);
+
+			const rx = radius * Math.sin(phi) * Math.cos(theta);
+			const ry = radius * Math.sin(phi) * Math.sin(theta);
+			const rz = radius * Math.cos(phi);
+
 			return {
 				id: i,
 				category: cat.name,
 				color: cat.color,
 				x: rx,
 				y: ry,
-				z: rz, // Current position
+				z: rz,
 				ix: rx,
 				iy: ry,
-				iz: rz, // Saved origin position for dispersing
+				iz: rz,
 			};
 		});
 	});
 
-	// 2. Physics Init (Slightly stronger repulsion for cloud-like clusters)
+	// THE CRITICAL FIX: Set numDimensions to 3 BEFORE passing the nodes
 	const [simulation] = useState(() => {
-		return forceSimulation(nodes)
+		return forceSimulation()
 			.numDimensions(3)
+			.nodes(nodes)
 			.force("charge", forceManyBody().strength(-2))
 			.stop();
 	});
@@ -64,10 +71,8 @@ export default function Universe({ triggerGravity }) {
 			meshRef.current.instanceColor.needsUpdate = true;
 	}, [nodes]);
 
-	// 3. THE 3D FIX: True 3D targets for Gravity, Origin targets for Dispersal
 	useEffect(() => {
 		if (triggerGravity) {
-			// Group them into deep 3D space
 			simulation
 				.force(
 					"x",
@@ -96,7 +101,6 @@ export default function Universe({ triggerGravity }) {
 				.alpha(1)
 				.restart();
 		} else {
-			// Scatter them back to their chaotic origins
 			simulation
 				.force("x", forceX((d) => d.ix).strength(0.05))
 				.force("y", forceY((d) => d.iy).strength(0.05))
@@ -118,7 +122,7 @@ export default function Universe({ triggerGravity }) {
 			meshRef.current.setMatrixAt(i, tempObject.matrix);
 		});
 		meshRef.current.instanceMatrix.needsUpdate = true;
-		meshRef.current.rotation.y += 0.001; // Slow majestic rotation
+		meshRef.current.rotation.y += 0.001;
 	});
 
 	return (
