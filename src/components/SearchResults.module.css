@@ -1,0 +1,221 @@
+.container {
+	position: absolute;
+	right: 24px;
+	top: 24px;
+	bottom: 100px;
+	width: 380px;
+	display: flex;
+	flex-direction: column;
+	pointer-events: auto;
+	z-index: 60;
+	font-family:
+		ui-sans-serif,
+		system-ui,
+		-apple-system,
+		BlinkMacSystemFont,
+		"Segoe UI",
+		Roboto,
+		sans-serif;
+}
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 12px;
+	padding: 0 4px;
+}
+
+.headerTitle {
+	font-size: 0.8rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #a1a1aa;
+}
+
+.headerCount {
+	font-size: 0.75rem;
+	color: #71717a;
+}
+
+.list {
+	flex: 1;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding-right: 4px;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.list::-webkit-scrollbar {
+	width: 4px;
+}
+
+.list::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+}
+
+.card {
+	background: rgba(9, 9, 11, 0.7);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-left: 3px solid #ffffff;
+	border-radius: 12px;
+	padding: 16px;
+	cursor: pointer;
+	transition:
+		transform 0.2s ease,
+		border-color 0.2s ease,
+		background 0.2s ease;
+	animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.card:hover {
+	transform: translateX(-4px);
+	background: rgba(9, 9, 11, 0.85);
+	border-color: rgba(255, 255, 255, 0.15);
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateX(30px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+.cardTop {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.cardTitle {
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #f4f4f5;
+	line-height: 1.3;
+}
+
+.badge {
+	font-size: 0.65rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding: 2px 8px;
+	border: 1px solid;
+	border-radius: 9999px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.cardContent {
+	margin: 0 0 12px 0;
+	font-size: 0.8rem;
+	line-height: 1.5;
+	color: #a1a1aa;
+}
+
+.cardBottom {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+}
+
+.similarityWrap {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.similarityTrack {
+	flex: 1;
+	height: 3px;
+	background: rgba(255, 255, 255, 0.08);
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.similarityFill {
+	height: 100%;
+	background: linear-gradient(90deg, #818cf8, #c084fc);
+	border-radius: 3px;
+	transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.similarityText {
+	font-size: 0.7rem;
+	color: #71717a;
+	white-space: nowrap;
+}
+
+.deleteBtn {
+	background: transparent;
+	border: none;
+	color: #52525b;
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 6px;
+	transition:
+		color 0.2s ease,
+		background 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.deleteBtn:hover {
+	color: #ef4444;
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.deleteBtn svg {
+	width: 14px;
+	height: 14px;
+}
+
+/* Loading state */
+.loadingBar {
+	height: 3px;
+	background: rgba(255, 255, 255, 0.08);
+	border-radius: 3px;
+	overflow: hidden;
+	margin-bottom: 12px;
+}
+
+.loadingFill {
+	height: 100%;
+	width: 40%;
+	background: linear-gradient(90deg, #818cf8, #c084fc);
+	border-radius: 3px;
+	animation: loadingSlide 1.2s ease-in-out infinite;
+}
+
+@keyframes loadingSlide {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(350%);
+	}
+}
+
+.loadingText {
+	font-size: 0.8rem;
+	color: #71717a;
+	text-align: center;
+	margin: 0;
+}
