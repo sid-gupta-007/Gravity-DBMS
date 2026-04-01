@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./AddRecord.module.css";
 
 const CATEGORIES = ["Engineering", "Marketing", "Design", "General"];
 
-export default function AddRecord({ onAdd, isAdding }) {
+export default function AddRecord({ onAdd, isAdding, hasResults }) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
@@ -11,6 +11,22 @@ export default function AddRecord({ onAdd, isAdding }) {
 	const [metaKey, setMetaKey] = useState("");
 	const [metaVal, setMetaVal] = useState("");
 	const [metaPairs, setMetaPairs] = useState([]);
+	const [mapUrl, setMapUrl] = useState(null);
+
+	// Fetch displacement map for the crystal button
+	useEffect(() => {
+		fetch("https://essykings.github.io/JavaScript/map.png")
+			.then((response) => response.blob())
+			.then((blob) => {
+				const objURL = URL.createObjectURL(blob);
+				setMapUrl(objURL);
+			})
+			.catch((err) => console.error("Failed to load displacement map:", err));
+
+		return () => {
+			if (mapUrl) URL.revokeObjectURL(mapUrl);
+		};
+	}, []);
 
 	const handleAddMeta = () => {
 		if (!metaKey.trim()) return;
@@ -48,29 +64,53 @@ export default function AddRecord({ onAdd, isAdding }) {
 
 	if (!isOpen) {
 		return (
-			<button
-				className={styles.fab}
-				onClick={() => setIsOpen(true)}
-				title="Add new record"
-			>
-				<svg
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="2.5"
-					strokeLinecap="round"
-					strokeLinejoin="round"
+			<>
+				<button
+					className={`${styles.glassButton} ${hasResults ? styles.glassButtonMoved : ""}`}
+					onClick={() => setIsOpen(true)}
+					title="Add new record"
 				>
-					<path d="M12 5v14M5 12h14" />
+					<span>+</span>
+				</button>
+
+				<svg style={{ position: "absolute", width: 0, height: 0 }}>
+					<filter
+						id="glass"
+						x="-50%"
+						y="-50%"
+						width="200%"
+						height="200%"
+						primitiveUnits="objectBoundingBox"
+					>
+						{mapUrl && (
+							<feImage
+								href={mapUrl}
+								x="-50%"
+								y="-50%"
+								width="200%"
+								height="200%"
+								result="map"
+							/>
+						)}
+						<feGaussianBlur in="SourceGraphic" stdDeviation="0.02" result="blur" />
+						<feDisplacementMap
+							id="disp"
+							in="blur"
+							in2="map"
+							scale="0.8"
+							xChannelSelector="R"
+							yChannelSelector="G"
+						/>
+					</filter>
 				</svg>
-			</button>
+			</>
 		);
 	}
 
 	return (
 		<div className={styles.overlay} onClick={() => setIsOpen(false)}>
 			<form
-				className={styles.modal}
+				className={`liquid-glass ${styles.modal}`}
 				onClick={(e) => e.stopPropagation()}
 				onSubmit={handleSubmit}
 			>

@@ -38,7 +38,7 @@ export default function ChatInterface({
 
 				<form
 					onSubmit={handleSubmit}
-					className={`${styles.searchBar} ${hasResults ? styles.searchBarActive : ""}`}
+					className={`liquid-glass ${styles.searchBar} ${hasResults ? styles.searchBarActive : ""}`}
 				>
 					{hasResults && (
 						<button

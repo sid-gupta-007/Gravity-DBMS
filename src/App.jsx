@@ -191,6 +191,7 @@ export default function App() {
 					deletingId={deletingId}
 					onDeleteComplete={handleDeleteComplete}
 					onStarClick={setSelectedRecord}
+					selectedRecordId={selectedRecord?.id}
 				/>
 				<OrbitControls makeDefault enableDamping dampingFactor={0.05} />
 				<EffectComposer disableNormalPass>
@@ -212,7 +213,11 @@ export default function App() {
 			/>
 
 			{/* Add Record FAB + Modal */}
-			<AddRecord onAdd={handleAddRecord} isAdding={isAdding} />
+			<AddRecord 
+				onAdd={handleAddRecord} 
+				isAdding={isAdding} 
+				hasResults={searchResults !== null && searchResults.length > 0}
+			/>
 
 			{/* Search Results panel */}
 			<SearchResults
@@ -226,17 +231,13 @@ export default function App() {
 			{/* Selected Record Detail */}
 			{selectedRecord && (
 				<div
+					className="liquid-glass"
 					style={{
 						position: "absolute",
 						left: 24,
 						top: 24,
 						width: 340,
 						maxHeight: "calc(100vh - 148px)",
-						background: "rgba(9,9,11,0.8)",
-						backdropFilter: "blur(20px)",
-						WebkitBackdropFilter: "blur(20px)",
-						border: "1px solid rgba(255,255,255,0.1)",
-						borderRadius: 16,
 						padding: 24,
 						color: "#f4f4f5",
 						fontFamily: "ui-sans-serif, system-ui, sans-serif",
@@ -345,15 +346,12 @@ export default function App() {
 			{/* Status / Error bar */}
 			{(error || records.length === 0) && (
 				<div
+					className="liquid-glass"
 					style={{
 						position: "absolute",
 						bottom: 12,
 						left: "50%",
 						transform: "translateX(-50%)",
-						background: "rgba(9,9,11,0.85)",
-						backdropFilter: "blur(12px)",
-						border: "1px solid rgba(255,255,255,0.1)",
-						borderRadius: 12,
 						padding: "10px 24px",
 						color: error?.startsWith("✅") ? "#6ee7b7" : "#f87171",
 						fontSize: "0.85rem",
@@ -363,7 +361,6 @@ export default function App() {
 						display: "flex",
 						alignItems: "center",
 						gap: 16,
-						boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
 					}}
 				>
 					<span>{error || "No records found. Run `node scripts/seed.js` to populate the universe with 2000 stars."}</span>

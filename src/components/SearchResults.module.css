@@ -60,10 +60,6 @@
 }
 
 .card {
-	background: rgba(9, 9, 11, 0.7);
-	backdrop-filter: blur(20px);
-	-webkit-backdrop-filter: blur(20px);
-	border: 1px solid rgba(255, 255, 255, 0.08);
 	border-left: 3px solid #ffffff;
 	border-radius: 12px;
 	padding: 16px;

@@ -14,3 +14,14 @@ html,
 	background-color: #030303;
 	color: white;
 }
+
+.liquid-glass {
+	background: 
+		linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(255, 255, 255, 0) 100%),
+		rgba(9, 9, 11, 0.5);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+	border-radius: 16px;
+}

@@ -17,7 +17,7 @@ export default function SearchResults({
 }) {
 	if (isLoading) {
 		return (
-			<div className={styles.container}>
+			<div className={`liquid-glass ${styles.container}`} style={{ padding: 24, borderRadius: 16 }}>
 				<div className={styles.loadingBar}>
 					<div className={styles.loadingFill} />
 				</div>
@@ -29,7 +29,7 @@ export default function SearchResults({
 	if (!results || results.length === 0) {
 		if (!results) return null;
 		return (
-			<div className={styles.container}>
+			<div className={`liquid-glass ${styles.container}`} style={{ padding: 24, borderRadius: 16, height: "auto", bottom: "auto" }}>
 				<div className={styles.header}>
 					<span className={styles.headerTitle}>Results</span>
 				</div>
@@ -58,7 +58,7 @@ export default function SearchResults({
 				{results.map((result, index) => (
 					<div
 						key={result.id}
-						className={styles.card}
+						className={`liquid-glass ${styles.card}`}
 						style={{
 							animationDelay: `${index * 80}ms`,
 							borderLeftColor:

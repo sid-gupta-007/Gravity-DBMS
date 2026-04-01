@@ -148,6 +148,7 @@ export default function Universe({
 	deletingId,
 	onDeleteComplete,
 	onStarClick,
+	selectedRecordId,
 }) {
 	const meshRef = useRef();
 	const groupRef = useRef();
@@ -199,9 +200,9 @@ export default function Universe({
 	}, [searchResults]);
 
 	// Animate orbits without physics simulation (60fps guaranteed for 2000 points)
-	useFrame(({ clock }) => {
+	useFrame((state) => {
 		if (!meshRef.current || nodes.length === 0) return;
-		const time = clock.getElapsedTime();
+		const time = state.clock.getElapsedTime();
 
 		nodes.forEach((node, i) => {
 			// Compute orbit
@@ -239,7 +240,33 @@ export default function Universe({
 
 		meshRef.current.instanceMatrix.needsUpdate = true;
 		if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+
+		// --- CAMERA & TARGET TRACKING ---
+		if (selectedRecordId && state.controls) {
+			state.controls.enabled = false; // Lock controls to prevent fighting
+			const targetNode = nodes.find((n) => n.id === selectedRecordId);
+			if (targetNode) {
+				const targetPos = new THREE.Vector3(targetNode.x, targetNode.y, targetNode.z);
+				// Maintain a cinematic offset so the node isn't perfectly dead center blocking everything
+				const camPos = targetPos.clone().add(new THREE.Vector3(10, 5, 20)); 
+
+				// Interpolate camera directly
+				state.camera.position.lerp(camPos, 0.05);
+
+				// Smooth lookAt tracking
+				const targetRotation = new THREE.Quaternion().setFromRotationMatrix(
+					new THREE.Matrix4().lookAt(state.camera.position, targetPos, state.camera.up)
+				);
+				state.camera.quaternion.slerp(targetRotation, 0.05);
+			}
+		} else if (state.controls && !state.controls.enabled) {
+			state.controls.enabled = true; // Restore controls when selection cleared
+			// Re-anchor the orbit target straight ahead to resume smoothly
+			const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(state.camera.quaternion);
+			state.controls.target.copy(state.camera.position.clone().add(forward.multiplyScalar(25)));
+		}
 	});
+
 
 	// Deletion SuperNova Logic
 	useEffect(() => {
