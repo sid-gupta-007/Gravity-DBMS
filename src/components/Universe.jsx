@@ -2,124 +2,141 @@ import React, { useRef, useState, useEffect, useMemo, useCallback } from "react"
 import { useFrame, useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
-import {
-	forceSimulation,
-	forceManyBody,
-	forceX,
-	forceY,
-	forceZ,
-} from "d3-force-3d";
 import SupernovaEffect from "./SupernovaEffect";
 
 const CATEGORY_COLORS = {
-	Engineering: new THREE.Color(0xffffff).multiplyScalar(1.2),
-	Marketing: new THREE.Color(0x818cf8).multiplyScalar(1.8),
-	Design: new THREE.Color(0xc084fc).multiplyScalar(4),
-	General: new THREE.Color(0x6ee7b7).multiplyScalar(2),
+	Course: new THREE.Color(0xfde047).multiplyScalar(3), // Yellow glowing core
+	Teacher: new THREE.Color(0xfca5a5).multiplyScalar(2), // Red
+	Subject: new THREE.Color(0xc084fc).multiplyScalar(2), // Purple
+	Student: new THREE.Color(0x6ee7b7).multiplyScalar(2), // Green
+	General: new THREE.Color(0xffffff),
 };
 
-const DIM_MULTIPLIER = 0.15;
+// Fixed positions for the "Table" Super-Stars
+const TABLE_CENTERS = {
+	Course: new THREE.Vector3(0, 0, 0),
+	Subject: new THREE.Vector3(-100, 50, -50),
+	Teacher: new THREE.Vector3(100, 50, -50),
+	Student: new THREE.Vector3(0, -120, 50),
+};
+
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
 
-function GravityLines({ nodes, highlightedIds }) {
+// ==========================================
+// THICK NEON TABLE CONSTRAINTS
+// ==========================================
+function TableConstraints() {
+	const constraints = [
+		[TABLE_CENTERS.Course, TABLE_CENTERS.Student, 0x6ee7b7], // Course <-> Student
+		[TABLE_CENTERS.Course, TABLE_CENTERS.Subject, 0xc084fc], // Course <-> Subject
+		[TABLE_CENTERS.Teacher, TABLE_CENTERS.Subject, 0xfca5a5], // Teacher <-> Subject
+	];
+
+	return (
+		<group>
+			{constraints.map((c, i) => {
+				const start = c[0];
+				const end = c[1];
+				const distance = start.distanceTo(end);
+				const position = start.clone().lerp(end, 0.5);
+				return (
+					<mesh
+						key={i}
+						position={position}
+						lookAt={(v) => v.copy(end)} // We'll compute rotation in a sec
+						onUpdate={(self) => self.lookAt(end)}
+					>
+						<cylinderGeometry args={[0.5, 0.5, distance, 8]} />
+						<meshBasicMaterial
+							color={c[2]}
+							transparent
+							opacity={0.3}
+							blending={THREE.AdditiveBlending}
+							depthWrite={false}
+						/>
+					</mesh>
+				);
+			})}
+		</group>
+	);
+}
+
+// ==========================================
+// DYNAMIC NODE CONNECTIONS (FOREIGN KEYS)
+// ==========================================
+function RelationLines({ nodes, highlightedIds, hoveredId }) {
 	const lineRef = useRef();
 
-	const { positions, colors, count } = useMemo(() => {
-		if (!nodes || nodes.length < 2) return { positions: new Float32Array(0), colors: new Float32Array(0), count: 0 };
+	const { positions, colors, count, activePairs } = useMemo(() => {
+		if (!nodes || nodes.length < 2) return { positions: new Float32Array(0), colors: new Float32Array(0), count: 0, activePairs: [] };
 
 		const pairs = [];
-		// Connect each node to its 2 nearest neighbors for visual gravity links
-		for (let i = 0; i < nodes.length; i++) {
-			const distances = [];
-			for (let j = 0; j < nodes.length; j++) {
-				if (i === j) continue;
-				const dx = (nodes[i].x || 0) - (nodes[j].x || 0);
-				const dy = (nodes[i].y || 0) - (nodes[j].y || 0);
-				const dz = (nodes[i].z || 0) - (nodes[j].z || 0);
-				distances.push({ j, dist: Math.sqrt(dx * dx + dy * dy + dz * dz) });
-			}
-			distances.sort((a, b) => a.dist - b.dist);
-			for (let k = 0; k < Math.min(2, distances.length); k++) {
-				const j = distances[k].j;
-				if (i < j) {
-					pairs.push([i, j, distances[k].dist]);
-				}
-			}
-		}
+		// We only want to draw lines for highlighted/hovered nodes to save performance
+		// and avoid a messy spiderweb of 2000 lines
+		const activeNodes = nodes.filter(n => highlightedIds.has(n.id) || n.id === hoveredId);
 
-		// Deduplicate
-		const uniqueKey = new Set();
-		const unique = pairs.filter(([a, b]) => {
-			const key = `${Math.min(a, b)}-${Math.max(a, b)}`;
-			if (uniqueKey.has(key)) return false;
-			uniqueKey.add(key);
-			return true;
+		activeNodes.forEach(activeNode => {
+			const meta = activeNode.metadata || {};
+			
+			// If it's a student, connect to their course
+			if (meta.course_id) {
+				const courseNode = nodes.find(n => n.id === meta.course_id);
+				if (courseNode) pairs.push({ a: activeNode, b: courseNode });
+			}
+			
+			// If it's a subject, connect to course and teacher
+			if (meta.teacher_id) {
+				const teacherNode = nodes.find(n => n.id === meta.teacher_id);
+				if (teacherNode) pairs.push({ a: activeNode, b: teacherNode });
+			}
+
+			// If it's a course, connect all students and subjects enrolled/belonging to it
+			if (activeNode.entity_type === "Course") {
+				nodes.forEach(n => {
+					if (n.metadata?.course_id === activeNode.id) pairs.push({ a: activeNode, b: n });
+				});
+			}
+
+            // If teacher
+            if (activeNode.entity_type === "Teacher") {
+				nodes.forEach(n => {
+					if (n.metadata?.teacher_id === activeNode.id) pairs.push({ a: activeNode, b: n });
+				});
+			}
 		});
 
-		const pos = new Float32Array(unique.length * 6);
-		const col = new Float32Array(unique.length * 6);
+		const pos = new Float32Array(pairs.length * 6);
+		const col = new Float32Array(pairs.length * 6);
 
-		unique.forEach(([a, b, dist], idx) => {
-			const na = nodes[a];
-			const nb = nodes[b];
-			pos[idx * 6] = na.x || 0;
-			pos[idx * 6 + 1] = na.y || 0;
-			pos[idx * 6 + 2] = na.z || 0;
-			pos[idx * 6 + 3] = nb.x || 0;
-			pos[idx * 6 + 4] = nb.y || 0;
-			pos[idx * 6 + 5] = nb.z || 0;
+		pairs.forEach((pair, idx) => {
+			const colorA = CATEGORY_COLORS[pair.a.entity_type] || CATEGORY_COLORS.General;
+			const colorB = CATEGORY_COLORS[pair.b.entity_type] || CATEGORY_COLORS.General;
 
-			const alpha = Math.max(0.05, 1 - dist / 80);
-			const colorA = CATEGORY_COLORS[na.category] || CATEGORY_COLORS.General;
-			const colorB = CATEGORY_COLORS[nb.category] || CATEGORY_COLORS.General;
-			col[idx * 6] = colorA.r * alpha * 0.3;
-			col[idx * 6 + 1] = colorA.g * alpha * 0.3;
-			col[idx * 6 + 2] = colorA.b * alpha * 0.3;
-			col[idx * 6 + 3] = colorB.r * alpha * 0.3;
-			col[idx * 6 + 4] = colorB.g * alpha * 0.3;
-			col[idx * 6 + 5] = colorB.b * alpha * 0.3;
+			col[idx * 6] = colorA.r * 0.8;
+			col[idx * 6 + 1] = colorA.g * 0.8;
+			col[idx * 6 + 2] = colorA.b * 0.8;
+			col[idx * 6 + 3] = colorB.r * 0.8;
+			col[idx * 6 + 4] = colorB.g * 0.8;
+			col[idx * 6 + 5] = colorB.b * 0.8;
 		});
 
-		return { positions: pos, colors: col, count: unique.length };
-	}, [nodes]);
+		return { positions: pos, colors: col, count: pairs.length, activePairs: pairs };
+	}, [nodes, highlightedIds, hoveredId]);
 
-	// Update line positions every frame based on current node positions
 	useFrame(() => {
-		if (!lineRef.current || !nodes || nodes.length < 2) return;
+		if (!lineRef.current || count === 0) return;
 		const posAttr = lineRef.current.geometry.getAttribute("position");
-		if (!posAttr) return;
 		const arr = posAttr.array;
 
-		let idx = 0;
-		const uniqueKey = new Set();
-		for (let i = 0; i < nodes.length && idx < count; i++) {
-			const distances = [];
-			for (let j = 0; j < nodes.length; j++) {
-				if (i === j) continue;
-				const dx = (nodes[i].x || 0) - (nodes[j].x || 0);
-				const dy = (nodes[i].y || 0) - (nodes[j].y || 0);
-				const dz = (nodes[i].z || 0) - (nodes[j].z || 0);
-				distances.push({ j, dist: Math.sqrt(dx * dx + dy * dy + dz * dz) });
-			}
-			distances.sort((a, b) => a.dist - b.dist);
-			for (let k = 0; k < Math.min(2, distances.length); k++) {
-				const j = distances[k].j;
-				const key = `${Math.min(i, j)}-${Math.max(i, j)}`;
-				if (uniqueKey.has(key)) continue;
-				if (i >= j) continue;
-				uniqueKey.add(key);
-				if (idx >= count) break;
-
-				arr[idx * 6] = nodes[i].x || 0;
-				arr[idx * 6 + 1] = nodes[i].y || 0;
-				arr[idx * 6 + 2] = nodes[i].z || 0;
-				arr[idx * 6 + 3] = nodes[j].x || 0;
-				arr[idx * 6 + 4] = nodes[j].y || 0;
-				arr[idx * 6 + 5] = nodes[j].z || 0;
-				idx++;
-			}
-		}
+		activePairs.forEach((pair, i) => {
+			arr[i * 6] = pair.a.x;
+			arr[i * 6 + 1] = pair.a.y;
+			arr[i * 6 + 2] = pair.a.z;
+			arr[i * 6 + 3] = pair.b.x;
+			arr[i * 6 + 4] = pair.b.y;
+			arr[i * 6 + 5] = pair.b.z;
+		});
 		posAttr.needsUpdate = true;
 	});
 
@@ -128,20 +145,10 @@ function GravityLines({ nodes, highlightedIds }) {
 	return (
 		<lineSegments key={`lines-${count}`} ref={lineRef}>
 			<bufferGeometry>
-				<bufferAttribute
-					attach="attributes-position"
-					count={count * 2}
-					array={positions}
-					itemSize={3}
-				/>
-				<bufferAttribute
-					attach="attributes-color"
-					count={count * 2}
-					array={colors}
-					itemSize={3}
-				/>
+				<bufferAttribute attach="attributes-position" count={count * 2} array={positions} itemSize={3} />
+				<bufferAttribute attach="attributes-color" count={count * 2} array={colors} itemSize={3} />
 			</bufferGeometry>
-			<lineBasicMaterial vertexColors transparent opacity={0.4} />
+			<lineBasicMaterial vertexColors transparent opacity={0.6} blending={THREE.AdditiveBlending} />
 		</lineSegments>
 	);
 }
@@ -149,7 +156,7 @@ function GravityLines({ nodes, highlightedIds }) {
 function Tooltip({ text, position }) {
 	if (!text) return null;
 	return (
-		<Html position={position} center style={{ pointerEvents: "none" }}>
+		<Html position={position} center style={{ pointerEvents: "none", zIndex: 100 }}>
 			<div
 				style={{
 					background: "rgba(9,9,11,0.85)",
@@ -186,225 +193,177 @@ export default function Universe({
 	const [hoveredIndex, setHoveredIndex] = useState(null);
 	const [supernovas, setSupernovas] = useState([]);
 
-	// Build nodes from records
 	const nodes = useMemo(() => {
 		if (!records || records.length === 0) return [];
 		return records.map((rec, i) => {
-			const radius = 15 + Math.random() * 45;
+			const type = rec.entity_type || "General";
+			const center = TABLE_CENTERS[type] || new THREE.Vector3(0, 0, 0);
+
+			// Gravity weight defines orbit radius and speed
+			// E.g. Courses have huge variance, Students are tightly bound
+			const maxRadius = type === "Student" ? 60 : 80;
+			const radius = 10 + Math.random() * maxRadius;
 			const theta = Math.random() * 2 * Math.PI;
 			const phi = Math.acos(Math.random() * 2 - 1);
+			const orbitSpeed = (Math.random() * 0.5 + 0.1) * (Math.random() > 0.5 ? 1 : -1);
+
+			// If it's the exact searched one, maybe pull it closer, but we'll do orbit math in useFrame
 			return {
 				id: rec.id,
 				index: i,
-				category: rec.category,
+				entity_type: type,
 				title: rec.title,
-				color: (CATEGORY_COLORS[rec.category] || CATEGORY_COLORS.General).clone(),
-				x: radius * Math.sin(phi) * Math.cos(theta),
-				y: radius * Math.sin(phi) * Math.sin(theta),
-				z: radius * Math.cos(phi),
-				ix: radius * Math.sin(phi) * Math.cos(theta),
-				iy: radius * Math.sin(phi) * Math.sin(theta),
-				iz: radius * Math.cos(phi),
+				metadata: rec.metadata,
+				color: (CATEGORY_COLORS[type] || CATEGORY_COLORS.General).clone(),
+				baseColor: (CATEGORY_COLORS[type] || CATEGORY_COLORS.General).clone(),
+                // Orbit parameters
+				center: center,
+				radius,
+				theta,
+				phi,
+				orbitSpeed,
+				// Current exact WebGL position (updated in frame)
+				x: center.x,
+				y: center.y,
+				z: center.z,
 			};
 		});
 	}, [records]);
 
-	// Highlighted record IDs from search
 	const highlightedIds = useMemo(() => {
 		if (!searchResults || searchResults.length === 0) return new Set();
 		return new Set(searchResults.map((r) => r.id));
 	}, [searchResults]);
 
-	// Build force simulation
-	const simulation = useMemo(() => {
-		if (nodes.length === 0) return null;
-		const sim = forceSimulation()
-			.numDimensions(3)
-			.nodes(nodes)
-			.force("charge", forceManyBody().strength(-1.5))
-			.force("x", forceX((d) => d.ix).strength(0.03))
-			.force("y", forceY((d) => d.iy).strength(0.03))
-			.force("z", forceZ((d) => d.iz).strength(0.03))
-			.alpha(0.3)
-			.alphaDecay(0.01);
-		return sim;
-	}, [nodes]);
-
-	// Apply search clustering forces
-	useEffect(() => {
-		if (!simulation || nodes.length === 0) return;
-
-		if (searchResults && searchResults.length > 0) {
-			// Pull matched stars toward center, push others outward
-			simulation
-				.force(
-					"x",
-					forceX((d) => {
-						if (highlightedIds.has(d.id)) {
-							const catIndex = ["Engineering", "Marketing", "Design"].indexOf(d.category);
-							return catIndex === 0 ? -15 : catIndex === 1 ? 15 : 0;
-						}
-						return d.ix * 1.5;
-					}).strength((d) => (highlightedIds.has(d.id) ? 0.15 : 0.02))
-				)
-				.force(
-					"y",
-					forceY((d) => {
-						if (highlightedIds.has(d.id)) return 0;
-						return d.iy * 1.5;
-					}).strength((d) => (highlightedIds.has(d.id) ? 0.15 : 0.02))
-				)
-				.force(
-					"z",
-					forceZ((d) => {
-						if (highlightedIds.has(d.id)) return 0;
-						return d.iz * 1.5;
-					}).strength((d) => (highlightedIds.has(d.id) ? 0.15 : 0.02))
-				)
-				.alpha(0.8)
-				.restart();
-		} else {
-			simulation
-				.force("x", forceX((d) => d.ix).strength(0.03))
-				.force("y", forceY((d) => d.iy).strength(0.03))
-				.force("z", forceZ((d) => d.iz).strength(0.03))
-				.alpha(0.5)
-				.restart();
-		}
-	}, [searchResults, simulation, highlightedIds, nodes]);
-
-	// Trigger supernova on delete
-	useEffect(() => {
-		if (!deletingId || nodes.length === 0) return;
-		const node = nodes.find((n) => n.id === deletingId);
-		if (!node) return;
-
-		setSupernovas((prev) => [
-			...prev,
-			{
-				id: deletingId,
-				position: [node.x || 0, node.y || 0, node.z || 0],
-				color: node.color,
-			},
-		]);
-	}, [deletingId, nodes]);
-
-	// Handle supernova completion
-	const handleSupernovaComplete = useCallback(
-		(id) => {
-			setSupernovas((prev) => prev.filter((s) => s.id !== id));
-			onDeleteComplete?.(id);
-		},
-		[onDeleteComplete]
-	);
-
-	// Raycasting for hover
-	useFrame(() => {
+	// Animate orbits without physics simulation (60fps guaranteed for 2000 points)
+	useFrame(({ clock }) => {
 		if (!meshRef.current || nodes.length === 0) return;
-
-		// Tick simulation
-		if (simulation) simulation.tick();
-
-		// Set up instanced mesh matrices and colors
-		const hasHighlight = highlightedIds.size > 0;
+		const time = clock.getElapsedTime();
 
 		nodes.forEach((node, i) => {
-			if (node.id === deletingId) {
-				// Hide deleted star
-				tempObject.position.set(99999, 99999, 99999);
-				tempObject.scale.set(0, 0, 0);
-			} else {
-				const x = isNaN(node.x) ? 0 : node.x;
-				const y = isNaN(node.y) ? 0 : node.y;
-				const z = isNaN(node.z) ? 0 : node.z;
-				tempObject.position.set(x, y, z);
+			// Compute orbit
+			const currentTheta = node.theta + time * node.orbitSpeed * 0.2;
+			
+			// Highlight pulling - if searched, pull to front slightly or pulse
+			const isHighlighted = highlightedIds.has(node.id) || node.id === highlightedId;
+			const scale = isHighlighted ? 1.5 : (node.radius / 80) * 0.8 + 0.5;
 
-				const isHighlighted = highlightedIds.has(node.id);
-				const isHovered = hoveredIndex === i || highlightedId === node.id;
-				const scale = isHovered ? 1.8 : isHighlighted ? 1.4 : 1;
-				tempObject.scale.set(scale, scale, scale);
-			}
+			node.x = node.center.x + node.radius * Math.sin(node.phi) * Math.cos(currentTheta);
+			node.y = node.center.y + node.radius * Math.sin(node.phi) * Math.sin(currentTheta);
+			node.z = node.center.z + node.radius * Math.cos(node.phi);
+
+			// Apply to instance
+			tempObject.position.set(node.x, node.y, node.z);
+			tempObject.scale.set(scale, scale, scale);
 			tempObject.updateMatrix();
 			meshRef.current.setMatrixAt(i, tempObject.matrix);
 
-			// Color: dim non-matches during search
-			const isHighlighted = highlightedIds.has(node.id);
-			const isHovered = hoveredIndex === i;
-			if (hasHighlight && !isHighlighted) {
-				tempColor.copy(node.color).multiplyScalar(DIM_MULTIPLIER);
-			} else if (isHovered) {
-				tempColor.copy(node.color).multiplyScalar(2.5);
+			// Hover/Highlight colors
+			const isHovered = i === hoveredIndex;
+			
+			if (isHovered) {
+				tempColor.setHex(0xffffff); // White hover
+			} else if (isHighlighted) {
+				tempColor.copy(node.baseColor).lerp(new THREE.Color(0xffffff), 0.3).multiplyScalar(1.5); // Brighten
+			} else if (highlightedIds.size > 0) {
+				tempColor.copy(node.baseColor).multiplyScalar(0.2); // Dim non-matches
 			} else {
-				tempColor.copy(node.color);
+				tempColor.copy(node.baseColor); // Default
 			}
+			
 			meshRef.current.setColorAt(i, tempColor);
 		});
 
 		meshRef.current.instanceMatrix.needsUpdate = true;
-		if (meshRef.current.instanceColor)
-			meshRef.current.instanceColor.needsUpdate = true;
-
-		// Slow rotation
-		if (groupRef.current) {
-			groupRef.current.rotation.y += 0.0005;
-		}
-
-		// Raycasting for hover
-		raycaster.setFromCamera(pointer, camera);
-		const intersects = raycaster.intersectObject(meshRef.current);
-		if (intersects.length > 0) {
-			setHoveredIndex(intersects[0].instanceId);
-		} else {
-			setHoveredIndex(null);
-		}
+		if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
 	});
 
-	// Handle click
-	const handleClick = useCallback(
-		(e) => {
-			if (e.instanceId !== undefined && nodes[e.instanceId]) {
-				const record = records?.find((r) => r.id === nodes[e.instanceId].id);
-				if (record) onStarClick?.(record);
+	// Deletion SuperNova Logic
+	useEffect(() => {
+		if (deletingId && nodes) {
+			const targetNode = nodes.find((n) => n.id === deletingId);
+			if (targetNode) {
+				setSupernovas((prev) => [
+					...prev,
+					{ id: deletingId, pos: [targetNode.x, targetNode.y, targetNode.z], color: targetNode.color },
+				]);
 			}
-		},
-		[nodes, records, onStarClick]
-	);
+		}
+	}, [deletingId, nodes]);
 
-	if (!nodes.length) return null;
+	// Raycasting interactions
+	const handleClick = useCallback((e) => {
+		e.stopPropagation();
+		if (e.instanceId !== undefined && nodes[e.instanceId]) {
+			onStarClick?.(nodes[e.instanceId]);
+		}
+	}, [nodes, onStarClick]);
+
+	const handlePointerMove = useCallback((e) => {
+		if (e.instanceId !== undefined) {
+			document.body.style.cursor = "pointer";
+			setHoveredIndex(e.instanceId);
+		}
+	}, []);
+
+	const handlePointerOut = useCallback(() => {
+		document.body.style.cursor = "default";
+		setHoveredIndex(null);
+	}, []);
 
 	const hoveredNode = hoveredIndex !== null ? nodes[hoveredIndex] : null;
 
 	return (
 		<group ref={groupRef}>
+
+			{/* Giant Table Stars */}
+			{Object.entries(TABLE_CENTERS).map(([type, pos], i) => (
+				<mesh key={type} position={pos}>
+					<sphereGeometry args={[4, 32, 32]} />
+					<meshBasicMaterial color={CATEGORY_COLORS[type] || 0xffffff} />
+					<Html position={[0, 6, 0]} center style={{ pointerEvents: 'none', color: '#fff', fontSize: '1rem', fontWeight: 'bold', textShadow: '0 0 10px rgba(0,0,0,1)' }}>
+						{type}s
+					</Html>
+				</mesh>
+			))}
+
+			<TableConstraints />
+
 			<instancedMesh
 				key={`stars-${nodes.length}`}
 				ref={meshRef}
 				args={[null, null, nodes.length]}
 				onClick={handleClick}
+				onPointerMove={handlePointerMove}
+				onPointerOut={handlePointerOut}
 			>
-				<sphereGeometry args={[0.35, 10, 10]} />
+				<sphereGeometry args={[0.3, 8, 8]} />
 				<meshBasicMaterial toneMapped={false} />
 			</instancedMesh>
 
-			<GravityLines key={`gravity-lines-${nodes.length}`} nodes={nodes} highlightedIds={highlightedIds} />
+			<RelationLines 
+				key={`gravity-lines-${nodes.length}`} 
+				nodes={nodes} 
+				highlightedIds={highlightedIds} 
+				hoveredId={hoveredNode?.id} 
+			/>
 
 			{hoveredNode && (
 				<Tooltip
 					text={hoveredNode.title}
-					position={[
-						hoveredNode.x || 0,
-						hoveredNode.y || 0,
-						hoveredNode.z || 0,
-					]}
+					position={[hoveredNode.x, hoveredNode.y + 1, hoveredNode.z]}
 				/>
 			)}
 
 			{supernovas.map((sn) => (
 				<SupernovaEffect
 					key={sn.id}
-					position={sn.position}
+					position={sn.pos}
 					color={sn.color}
-					onComplete={() => handleSupernovaComplete(sn.id)}
+					onComplete={() => {
+						setSupernovas((prev) => prev.filter((s) => s.id !== sn.id));
+						onDeleteComplete?.(sn.id);
+					}}
 				/>
 			))}
 		</group>

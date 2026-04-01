@@ -17,8 +17,6 @@ export default function App() {
 	const [deletingId, setDeletingId] = useState(null);
 	const [selectedRecord, setSelectedRecord] = useState(null);
 	const [error, setError] = useState(null);
-	const [isSeeding, setIsSeeding] = useState(false);
-	const [seedingProgress, setSeedingProgress] = useState({ current: 0, total: 0 });
 	const [isAdding, setIsAdding] = useState(false);
 
 	// Fetch all records on mount
@@ -27,17 +25,22 @@ export default function App() {
 	}, []);
 
 	const fetchRecords = async () => {
-		const { data, error: err } = await supabase
-			.from("documents")
-			.select("id, title, content, category, metadata, created_at")
-			.order("created_at", { ascending: true });
+		const { data, error: err } = await supabase.rpc("get_all_entities");
 
 		if (err) {
 			console.error("Failed to fetch records:", err);
 			setError("Failed to connect to database. Have you run the schema.sql?");
 			return;
 		}
-		setRecords(data || []);
+		
+		// Map 'category' so the rest of the UI doesn't break 
+		// (SearchResults expects 'category')
+		const formattedData = (data || []).map(d => ({
+			...d,
+			category: d.entity_type
+		}));
+		
+		setRecords(formattedData);
 	};
 
 	// Semantic search
@@ -48,15 +51,22 @@ export default function App() {
 			// Generate embedding for the query
 			const embedding = await generateEmbedding(query);
 
-			// Call the match_documents RPC function
-			const { data, error: err } = await supabase.rpc("match_documents", {
+			// Call the match_entities RPC function
+			const { data, error: err } = await supabase.rpc("match_entities", {
 				query_embedding: embedding,
-				match_count: 10,
+				match_count: 20,
 				match_threshold: 0.1,
 			});
 
 			if (err) throw err;
-			setSearchResults(data || []);
+			
+			// Format results
+			const formattedResults = (data || []).map(d => ({
+				...d,
+				category: d.entity_type
+			}));
+			
+			setSearchResults(formattedResults);
 		} catch (err) {
 			console.error("Search failed:", err);
 			setError("Search failed. Check console for details.");
@@ -81,10 +91,24 @@ export default function App() {
 	// After supernova animation completes
 	const handleDeleteComplete = useCallback(
 		async (id) => {
+			const record = records.find(r => r.id === id);
+			if (!record) return;
+
+			let table = "students"; // Default fallback
+			if (record.entity_type === "Course") table = "courses";
+			if (record.entity_type === "Teacher") table = "teachers";
+			if (record.entity_type === "Subject") table = "subjects";
+			
+			// The primary key column names differ
+			let pkCol = "roll_no";
+			if (table === "courses") pkCol = "course_id";
+			if (table === "teachers") pkCol = "teacher_id";
+			if (table === "subjects") pkCol = "subject_id";
+
 			const { error: err } = await supabase
-				.from("documents")
+				.from(table)
 				.delete()
-				.eq("id", id);
+				.eq(pkCol, id);
 
 			if (err) {
 				console.error("Delete failed:", err);
@@ -96,7 +120,7 @@ export default function App() {
 			}
 			setDeletingId(null);
 		},
-		[]
+		[records]
 	);
 
 	// Add new record
@@ -108,16 +132,35 @@ export default function App() {
 			const text = `${title}. ${content}. Category: ${category}`;
 			const embedding = await generateEmbedding(text);
 
+			let table = "students";
+			let record = { name: title, embedding };
+			
+			if (category === "Course" || category === "Engineering") {
+				table = "courses";
+				record.course_id = `CRS-NEW-${Date.now()}`;
+			} else if (category === "Teacher") {
+				table = "teachers";
+				record.teacher_id = `TCH-NEW-${Date.now()}`;
+			} else if (category === "Design" || category === "Subject") {
+				table = "subjects";
+				record.subject_id = `SUB-NEW-${Date.now()}`;
+				record.course_id = "CRS-1"; // Mock FK
+				record.teacher_id = "TCH-1"; // Mock FK
+			} else {
+				table = "students";
+				record.roll_no = `STD-NEW-${Date.now()}`;
+				record.course_id = "CRS-1"; // Mock FK
+			}
+
 			// Insert into Supabase
 			const { data, error: insertErr } = await supabase
-				.from("documents")
-				.insert([{ title, content, category, metadata, embedding }])
+				.from(table)
+				.insert([record])
 				.select();
 
 			if (insertErr) throw insertErr;
-			if (data && data.length > 0) {
-				setRecords((prev) => [...prev, data[0]]);
-			}
+			// Refresh to get the generic view
+			await fetchRecords();
 		} catch (err) {
 			console.error("Add record failed:", err);
 			setError("Failed to add record. Check console.");
@@ -126,53 +169,9 @@ export default function App() {
 		}
 	}, []);
 
-	// Seed embeddings for records that don't have them
-	const handleSeedEmbeddings = useCallback(async () => {
-		setIsSeeding(true);
-		setError(null);
-		try {
-			// Get records without embeddings
-			const { data: docs, error: fetchErr } = await supabase
-				.from("documents")
-				.select("id, title, content, category")
-				.is("embedding", null);
+	// Seeding is now handled by scripts/seed.js due to the 2000 node scale
+	// and to prevent browser memory crashes with the local AI model.
 
-			if (fetchErr) throw fetchErr;
-			if (!docs || docs.length === 0) {
-				setError("All records already have embeddings!");
-				setIsSeeding(false);
-				return;
-			}
-
-			setSeedingProgress({ current: 0, total: docs.length });
-
-			for (let i = 0; i < docs.length; i++) {
-				const doc = docs[i];
-				setSeedingProgress({ current: i + 1, total: docs.length });
-
-				const text = `${doc.title}. ${doc.content}. Category: ${doc.category}`;
-				const embedding = await generateEmbedding(text);
-
-				const { error: updateErr } = await supabase
-					.from("documents")
-					.update({ embedding })
-					.eq("id", doc.id);
-
-				if (updateErr) {
-					console.error(`Failed to embed doc ${doc.id}:`, updateErr);
-				}
-			}
-
-			setError(`✅ Embedded ${docs.length} records successfully!`);
-			setSeedingProgress({ current: 0, total: 0 });
-			await fetchRecords();
-		} catch (err) {
-			console.error("Seeding failed:", err);
-			setError("Seeding failed. Ensure you ran the latest schema.sql (384-dim).");
-		} finally {
-			setIsSeeding(false);
-		}
-	}, []);
 
 	return (
 		<div
@@ -344,7 +343,7 @@ export default function App() {
 			)}
 
 			{/* Status / Error bar */}
-			{(error || records.length === 0 || isSeeding) && (
+			{(error || records.length === 0) && (
 				<div
 					style={{
 						position: "absolute",
@@ -356,7 +355,7 @@ export default function App() {
 						border: "1px solid rgba(255,255,255,0.1)",
 						borderRadius: 12,
 						padding: "10px 24px",
-						color: error?.startsWith("✅") ? "#6ee7b7" : isSeeding ? "#f4f4f5" : "#f87171",
+						color: error?.startsWith("✅") ? "#6ee7b7" : "#f87171",
 						fontSize: "0.85rem",
 						fontFamily: "ui-sans-serif, system-ui, sans-serif",
 						zIndex: 70,
@@ -367,75 +366,13 @@ export default function App() {
 						boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
 					}}
 				>
-					{isSeeding ? (
-						<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-							<div className="seeding-spinner" style={{
-								width: 14, height: 14, border: "2px solid #ffffff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite"
-							}} />
-							<span>Embedding stars: {seedingProgress.current} / {seedingProgress.total}</span>
-						</div>
-					) : (
-						<span>{error || "No records found. Seed the database first."}</span>
-					)}
-					
-					{records.length > 0 && !error?.startsWith("✅") && !isSeeding && (
-						<button
-							onClick={handleSeedEmbeddings}
-							style={{
-								background: "#ffffff",
-								color: "#09090b",
-								border: "none",
-								borderRadius: 8,
-								padding: "6px 14px",
-								fontSize: "0.75rem",
-								fontWeight: 600,
-								cursor: "pointer",
-							}}
-						>
-							Generate Embeddings
-						</button>
-					)}
+					<span>{error || "No records found. Run `node scripts/seed.js` to populate the universe with 2000 stars."}</span>
 				</div>
 			)}
 
 			<style>{`
 				@keyframes spin { to { transform: rotate(360deg); } }
 			`}</style>
-
-			{/* Seed Embeddings button (top-right, always visible if records exist without errors) */}
-			{records.length > 0 && !searchResults && !error && (
-				<button
-					onClick={handleSeedEmbeddings}
-					disabled={isSeeding}
-					style={{
-						position: "absolute",
-						top: 20,
-						right: 20,
-						background: "rgba(9,9,11,0.6)",
-						backdropFilter: "blur(12px)",
-						border: "1px solid rgba(255,255,255,0.1)",
-						borderRadius: 10,
-						padding: "8px 16px",
-						color: "#a1a1aa",
-						fontSize: "0.75rem",
-						fontFamily: "ui-sans-serif, system-ui, sans-serif",
-						cursor: isSeeding ? "not-allowed" : "pointer",
-						zIndex: 60,
-						transition: "all 0.2s ease",
-						opacity: isSeeding ? 0.5 : 1,
-					}}
-					onMouseEnter={(e) => {
-						e.target.style.borderColor = "rgba(255,255,255,0.2)";
-						e.target.style.color = "#f4f4f5";
-					}}
-					onMouseLeave={(e) => {
-						e.target.style.borderColor = "rgba(255,255,255,0.1)";
-						e.target.style.color = "#a1a1aa";
-					}}
-				>
-					{isSeeding ? "⏳ Generating Embeddings..." : "🌟 Seed Embeddings"}
-				</button>
-			)}
 
 			{/* Record count */}
 			{records.length > 0 && (
