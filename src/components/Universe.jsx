@@ -23,44 +23,7 @@ const TABLE_CENTERS = {
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
 
-// ==========================================
-// THICK NEON TABLE CONSTRAINTS
-// ==========================================
-function TableConstraints() {
-	const constraints = [
-		[TABLE_CENTERS.Course, TABLE_CENTERS.Student, 0x6ee7b7], // Course <-> Student
-		[TABLE_CENTERS.Course, TABLE_CENTERS.Subject, 0xc084fc], // Course <-> Subject
-		[TABLE_CENTERS.Teacher, TABLE_CENTERS.Subject, 0xfca5a5], // Teacher <-> Subject
-	];
 
-	return (
-		<group>
-			{constraints.map((c, i) => {
-				const start = c[0];
-				const end = c[1];
-				const distance = start.distanceTo(end);
-				const position = start.clone().lerp(end, 0.5);
-				return (
-					<mesh
-						key={i}
-						position={position}
-						lookAt={(v) => v.copy(end)} // We'll compute rotation in a sec
-						onUpdate={(self) => self.lookAt(end)}
-					>
-						<cylinderGeometry args={[0.5, 0.5, distance, 8]} />
-						<meshBasicMaterial
-							color={c[2]}
-							transparent
-							opacity={0.3}
-							blending={THREE.AdditiveBlending}
-							depthWrite={false}
-						/>
-					</mesh>
-				);
-			})}
-		</group>
-	);
-}
 
 // ==========================================
 // DYNAMIC NODE CONNECTIONS (FOREIGN KEYS)
@@ -78,13 +41,13 @@ function RelationLines({ nodes, highlightedIds, hoveredId }) {
 
 		activeNodes.forEach(activeNode => {
 			const meta = activeNode.metadata || {};
-			
+
 			// If it's a student, connect to their course
 			if (meta.course_id) {
 				const courseNode = nodes.find(n => n.id === meta.course_id);
 				if (courseNode) pairs.push({ a: activeNode, b: courseNode });
 			}
-			
+
 			// If it's a subject, connect to course and teacher
 			if (meta.teacher_id) {
 				const teacherNode = nodes.find(n => n.id === meta.teacher_id);
@@ -98,8 +61,8 @@ function RelationLines({ nodes, highlightedIds, hoveredId }) {
 				});
 			}
 
-            // If teacher
-            if (activeNode.entity_type === "Teacher") {
+			// If teacher
+			if (activeNode.entity_type === "Teacher") {
 				nodes.forEach(n => {
 					if (n.metadata?.teacher_id === activeNode.id) pairs.push({ a: activeNode, b: n });
 				});
@@ -216,7 +179,7 @@ export default function Universe({
 				metadata: rec.metadata,
 				color: (CATEGORY_COLORS[type] || CATEGORY_COLORS.General).clone(),
 				baseColor: (CATEGORY_COLORS[type] || CATEGORY_COLORS.General).clone(),
-                // Orbit parameters
+				// Orbit parameters
 				center: center,
 				radius,
 				theta,
@@ -243,7 +206,7 @@ export default function Universe({
 		nodes.forEach((node, i) => {
 			// Compute orbit
 			const currentTheta = node.theta + time * node.orbitSpeed * 0.2;
-			
+
 			// Highlight pulling - if searched, pull to front slightly or pulse
 			const isHighlighted = highlightedIds.has(node.id) || node.id === highlightedId;
 			const scale = isHighlighted ? 1.5 : (node.radius / 80) * 0.8 + 0.5;
@@ -260,7 +223,7 @@ export default function Universe({
 
 			// Hover/Highlight colors
 			const isHovered = i === hoveredIndex;
-			
+
 			if (isHovered) {
 				tempColor.setHex(0xffffff); // White hover
 			} else if (isHighlighted) {
@@ -270,7 +233,7 @@ export default function Universe({
 			} else {
 				tempColor.copy(node.baseColor); // Default
 			}
-			
+
 			meshRef.current.setColorAt(i, tempColor);
 		});
 
@@ -327,7 +290,7 @@ export default function Universe({
 				</mesh>
 			))}
 
-			<TableConstraints />
+
 
 			<instancedMesh
 				key={`stars-${nodes.length}`}
@@ -341,11 +304,11 @@ export default function Universe({
 				<meshBasicMaterial toneMapped={false} />
 			</instancedMesh>
 
-			<RelationLines 
-				key={`gravity-lines-${nodes.length}`} 
-				nodes={nodes} 
-				highlightedIds={highlightedIds} 
-				hoveredId={hoveredNode?.id} 
+			<RelationLines
+				key={`gravity-lines-${nodes.length}`}
+				nodes={nodes}
+				highlightedIds={highlightedIds}
+				hoveredId={hoveredNode?.id}
 			/>
 
 			{hoveredNode && (
