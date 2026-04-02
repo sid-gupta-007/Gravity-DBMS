@@ -13,12 +13,11 @@ const ENTITY_COLORS = {
 	General: new THREE.Color("#6ee7b7").multiplyScalar(10.0),  // Emerald (custom entities)
 };
 
-// Entity-type star sizes (relative) - Scaled up for easier clicking UX
 const ENTITY_SIZES = {
-	Course: 3.5,
-	Teacher: 2.5,
-	Subject: 2.0,
-	Student: 1.5,
+	Course: 2.5,
+	Teacher: 1.8,
+	Subject: 1.4,
+	Student: 1.0,
 };
 
 // Distinct hues for department labels (generated dynamically)
@@ -130,7 +129,7 @@ function RelationLines({ nodes, highlightedIds, hoveredId }) {
 			<lineBasicMaterial
 				vertexColors
 				transparent
-				opacity={0.6}
+				opacity={0.15}
 				blending={THREE.AdditiveBlending}
 			/>
 		</lineSegments>
@@ -283,7 +282,7 @@ export default function Universe({
 
 		const deptArray = Array.from(depts).sort();
 		const centers = {};
-		const clusterRadius = 120; // Distance between department clusters
+		const clusterRadius = 80; // Distance between department clusters
 
 		deptArray.forEach((dept, i) => {
 			const angle = (i / deptArray.length) * Math.PI * 2;
@@ -315,12 +314,12 @@ export default function Universe({
 			// Entity type determines orbit radius range
 			const maxRadius =
 				type === "Course"
-					? 15
+					? 10
 					: type === "Teacher"
-						? 35
+						? 20
 						: type === "Subject"
-							? 45
-							: 60;
+							? 30
+							: 45;
 			const radius = 5 + Math.random() * maxRadius;
 			const theta = Math.random() * 2 * Math.PI;
 			const phi = Math.acos(Math.random() * 2 - 1);
@@ -402,7 +401,9 @@ export default function Universe({
 					.lerp(new THREE.Color(0xffffff), 0.3)
 					.multiplyScalar(1.5);
 			} else if (highlightedIds.size > 0) {
-				tempColor.copy(node.baseColor).multiplyScalar(0.2);
+				// Base colors are highly scaled (e.g. 10.0), so we need a very low multiplier 
+				// to pull them below the bloom luminance threshold
+				tempColor.copy(node.baseColor).multiplyScalar(0.01);
 			} else {
 				tempColor.copy(node.baseColor);
 			}
