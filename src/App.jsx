@@ -55,7 +55,7 @@ export default function App() {
 			const { data, error: err } = await supabase.rpc("match_entities", {
 				query_embedding: embedding,
 				match_count: 20,
-				match_threshold: 0.1,
+				match_threshold: 0.35, // Balanced: filters nonsense (~0.12) but allows good matches (~0.56)
 			});
 
 			if (err) throw err;

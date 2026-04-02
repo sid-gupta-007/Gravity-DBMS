@@ -28,7 +28,7 @@ export default function ChatInterface({
 				<h1
 					className={`${styles.title} ${hasResults ? styles.titleHidden : ""}`}
 				>
-					Gravity
+					GRAVITY
 				</h1>
 				<p
 					className={`${styles.subtitle} ${hasResults ? styles.titleHidden : ""}`}

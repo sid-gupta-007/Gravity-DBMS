@@ -4,12 +4,13 @@ import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import SupernovaEffect from "./SupernovaEffect";
 
+// Scientifically accurate Blackbody Star Colors based on stellar classes
 const CATEGORY_COLORS = {
-	Course: new THREE.Color(0xfde047).multiplyScalar(3), // Yellow glowing core
-	Teacher: new THREE.Color(0xfca5a5).multiplyScalar(2), // Red
-	Subject: new THREE.Color(0xc084fc).multiplyScalar(2), // Purple
-	Student: new THREE.Color(0x6ee7b7).multiplyScalar(2), // Green
-	General: new THREE.Color(0xffffff),
+	Course: new THREE.Color("#9db4ff").multiplyScalar(1.5),  // O-Class Blue Giant (Hot, Massive)
+	Subject: new THREE.Color("#baccff").multiplyScalar(1.2), // A-Class White Star
+	Teacher: new THREE.Color("#fff5ec").multiplyScalar(1.2), // G-Class Yellow Star (Like our Sun)
+	Student: new THREE.Color("#ffbe7f").multiplyScalar(1.1), // M-Class Red Dwarf (Cool, common)
+	General: new THREE.Color("#ffebd1"),                     // K-Class Orange
 };
 
 // Fixed positions for the "Table" Super-Stars
