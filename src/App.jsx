@@ -375,10 +375,10 @@ export default function App() {
 				<OrbitControls makeDefault enableDamping dampingFactor={0.05} />
 				<EffectComposer disableNormalPass>
 					<Bloom
-						luminanceThreshold={0.4}
+						luminanceThreshold={0.2}
 						mipmapBlur
-						intensity={0.6}
-						radius={0.4}
+						intensity={1.5}
+						radius={0.6}
 					/>
 				</EffectComposer>
 			</Canvas>

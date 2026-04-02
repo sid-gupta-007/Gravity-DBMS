@@ -6,19 +6,19 @@ import SupernovaEffect from "./SupernovaEffect";
 
 // Entity-type based stellar colors (scientifically inspired)
 const ENTITY_COLORS = {
-	Course: new THREE.Color("#9db4ff").multiplyScalar(1.5),   // O-Class Blue Giant
-	Subject: new THREE.Color("#baccff").multiplyScalar(1.2),  // A-Class White-Blue
-	Teacher: new THREE.Color("#fff5ec").multiplyScalar(1.2),  // G-Class Yellow (Sun)
-	Student: new THREE.Color("#ffbe7f").multiplyScalar(1.1),  // M-Class Red Dwarf
-	General: new THREE.Color("#6ee7b7"),                      // Emerald (custom entities)
+	Course: new THREE.Color("#9db4ff").multiplyScalar(10.0),   // O-Class Blue Giant
+	Subject: new THREE.Color("#baccff").multiplyScalar(10.5),  // A-Class White-Blue
+	Teacher: new THREE.Color("#fff5ec").multiplyScalar(10.5),  // G-Class Yellow (Sun)
+	Student: new THREE.Color("#ffbe7f").multiplyScalar(10.0),  // M-Class Red Dwarf
+	General: new THREE.Color("#6ee7b7").multiplyScalar(10.0),  // Emerald (custom entities)
 };
 
-// Entity-type star sizes (relative)
+// Entity-type star sizes (relative) - Scaled up for easier clicking UX
 const ENTITY_SIZES = {
-	Course: 1.8,
-	Teacher: 1.3,
-	Subject: 1.0,
-	Student: 0.7,
+	Course: 3.5,
+	Teacher: 2.5,
+	Subject: 2.0,
+	Student: 1.5,
 };
 
 // Distinct hues for department labels (generated dynamically)
@@ -137,30 +137,115 @@ function RelationLines({ nodes, highlightedIds, hoveredId }) {
 	);
 }
 
-function Tooltip({ text, position }) {
-	if (!text) return null;
+function DashTooltip({ node, position }) {
+	if (!node) return null;
+
+	const { title, entity_type, department, metadata } = node;
+
+	const renderMeta = () => {
+		if (!metadata) return null;
+		const entries = Object.entries(metadata).filter(
+			([k, v]) => !["id", "name", "department", "entity_type", "course_id", "teacher_id"].includes(k) && v
+		).slice(0, 3);
+		if (entries.length === 0) return null;
+
+		return (
+			<div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+				{entries.map(([k, v]) => (
+					<div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "12px", fontSize: "0.65rem", color: "#a1a1aa" }}>
+						<span style={{ textTransform: "capitalize" }}>{k.replace(/_/g, " ")}:</span>
+						<span style={{ color: "#e4e4e7", fontWeight: 600, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100px" }}>{v}</span>
+					</div>
+				))}
+			</div>
+		);
+	};
+
+	const iconMap = {
+		Course: "🎓",
+		Teacher: "👨‍🏫",
+		Subject: "📚",
+		Student: "🧑‍🎓",
+		General: "✨"
+	};
+
+	const UI_COLORS = {
+		Course: "#9db4ff",
+		Subject: "#baccff",
+		Teacher: "#fff5ec",
+		Student: "#ffbe7f",
+		General: "#6ee7b7",
+	};
+
 	return (
 		<Html
 			position={position}
 			center
 			style={{ pointerEvents: "none", zIndex: 100 }}
+			distanceFactor={60}
 		>
 			<div
+				className="liquid-glass"
 				style={{
-					background: "rgba(9,9,11,0.85)",
-					backdropFilter: "blur(12px)",
-					border: "1px solid rgba(255,255,255,0.12)",
-					borderRadius: "8px",
-					padding: "6px 12px",
+					background: "rgba(9, 9, 11, 0.75)",
+					backdropFilter: "blur(16px)",
+					border: "1px solid rgba(255, 255, 255, 0.15)",
+					borderRadius: "12px",
+					padding: "12px 16px",
 					color: "#f4f4f5",
-					fontSize: "0.75rem",
+					minWidth: "180px",
+					boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+					transform: "translateY(-60px)",
+					transition: "all 0.2s ease",
 					fontFamily: "ui-sans-serif, system-ui, sans-serif",
-					fontWeight: 500,
-					whiteSpace: "nowrap",
-					transform: "translateY(-28px)",
 				}}
 			>
-				{text}
+				<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+					<span style={{ fontSize: "1.2rem" }}>{iconMap[entity_type] || iconMap.General}</span>
+					<div style={{
+						background: "rgba(255,255,255,0.05)",
+						padding: "2px 6px",
+						borderRadius: "4px",
+						fontSize: "0.6rem",
+						fontWeight: "700",
+						letterSpacing: "0.05em",
+						textTransform: "uppercase",
+						color: UI_COLORS[entity_type] || UI_COLORS.General,
+						border: `1px solid ${UI_COLORS[entity_type] || UI_COLORS.General}40`
+					}}>
+						{entity_type}
+					</div>
+				</div>
+				
+				<div style={{ 
+					fontSize: "1.0rem", 
+					fontWeight: 800, 
+					whiteSpace: "nowrap",
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					maxWidth: "220px",
+					letterSpacing: "-0.02em"
+				}}>
+					{title || "Unknown Entity"}
+				</div>
+				
+				{department && department !== "General" && (
+					<div style={{ fontSize: "0.7rem", color: "#a1a1aa", marginTop: "2px" }}>
+						Dept: <span style={{ color: "#d4d4d8" }}>{department}</span>
+					</div>
+				)}
+
+				{(renderMeta()) && (
+					<>
+						<div style={{ height: "1px", background: "rgba(255,255,255,0.1)", margin: "8px 0" }} />
+						{renderMeta()}
+					</>
+				)}
+				
+				<div style={{ marginTop: "10px", fontSize: "0.65rem", color: "#6ee7b7", textAlign: "center", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+					<div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#6ee7b7", animation: "pulse 2s infinite" }} />
+					CLICK TO EXPLORE
+				</div>
 			</div>
 		</Html>
 	);
@@ -469,8 +554,8 @@ export default function Universe({
 			/>
 
 			{hoveredNode && (
-				<Tooltip
-					text={`${hoveredNode.title} (${hoveredNode.entity_type})`}
+				<DashTooltip
+					node={hoveredNode}
 					position={[hoveredNode.x, hoveredNode.y + 1, hoveredNode.z]}
 				/>
 			)}
