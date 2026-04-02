@@ -1,0 +1,303 @@
+.container {
+	position: absolute;
+	left: 24px;
+	top: 24px;
+	width: 360px;
+	max-height: calc(100vh - 148px);
+	padding: 24px;
+	color: #f4f4f5;
+	font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+		"Segoe UI", Roboto, sans-serif;
+	overflow-y: auto;
+	z-index: 60;
+	pointer-events: auto;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.container::-webkit-scrollbar {
+	width: 4px;
+}
+
+.container::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
+}
+
+/* Close button */
+.closeBtn {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	background: transparent;
+	border: none;
+	color: #71717a;
+	cursor: pointer;
+	font-size: 1.2rem;
+	padding: 4px;
+	transition: color 0.2s ease;
+}
+
+.closeBtn:hover {
+	color: #ffffff;
+}
+
+/* Type badge */
+.typeBadge {
+	font-size: 0.65rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	margin-bottom: 8px;
+}
+
+/* Title */
+.title {
+	margin: 0 0 12px 0;
+	font-size: 1.3rem;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+/* Content description */
+.content {
+	margin: 0 0 16px 0;
+	font-size: 0.85rem;
+	line-height: 1.7;
+	color: #a1a1aa;
+}
+
+/* ==========================================
+   METADATA BLOCK
+   ========================================== */
+.metaBlock {
+	background: rgba(255, 255, 255, 0.04);
+	border-radius: 8px;
+	padding: 12px;
+	margin-bottom: 16px;
+}
+
+.metaLabel {
+	font-size: 0.7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: #71717a;
+	margin-bottom: 8px;
+}
+
+.metaRow {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.78rem;
+	padding: 4px 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.metaKey {
+	color: #71717a;
+}
+
+.metaVal {
+	color: #d4d4d8;
+}
+
+/* ==========================================
+   RELATED ENTITIES
+   ========================================== */
+.relatedBlock {
+	margin-bottom: 16px;
+}
+
+.relatedHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.relatedHeaderTitle {
+	font-size: 0.7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #71717a;
+}
+
+.relatedHeaderCount {
+	font-size: 0.7rem;
+	color: #52525b;
+}
+
+/* Section (collapsible group) */
+.section {
+	margin-bottom: 4px;
+	border-radius: 8px;
+	overflow: hidden;
+	background: rgba(255, 255, 255, 0.02);
+	border: 1px solid rgba(255, 255, 255, 0.05);
+	transition: border-color 0.2s ease;
+}
+
+.section:hover {
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+.sectionHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	padding: 8px 10px;
+	background: transparent;
+	border: none;
+	color: #f4f4f5;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 0.8rem;
+	font-weight: 500;
+	transition: background 0.15s ease;
+}
+
+.sectionHeader:hover {
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.sectionLeft {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.sectionIcon {
+	font-size: 0.85rem;
+}
+
+.sectionLabel {
+	font-weight: 500;
+}
+
+.sectionRight {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.sectionCount {
+	font-size: 0.65rem;
+	font-weight: 700;
+	padding: 1px 6px;
+	border: 1px solid;
+	border-radius: 9999px;
+	min-width: 20px;
+	text-align: center;
+}
+
+.chevron {
+	font-size: 0.7rem;
+	color: #71717a;
+	transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+	transform: rotate(90deg);
+}
+
+/* Section body (list of related items) */
+.sectionBody {
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sectionBodyOpen {
+	max-height: 1000px;
+}
+
+/* Individual related item */
+.relatedItem {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 5px 10px 5px 18px;
+	background: transparent;
+	border: none;
+	color: #d4d4d8;
+	font-size: 0.75rem;
+	font-family: inherit;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.relatedItem:hover {
+	background: rgba(255, 255, 255, 0.06);
+	color: #ffffff;
+}
+
+.relatedDot {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.relatedName {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.relatedType {
+	font-size: 0.6rem;
+	color: #52525b;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	flex-shrink: 0;
+}
+
+/* Show more button */
+.showMore {
+	width: 100%;
+	padding: 6px 10px 6px 18px;
+	background: transparent;
+	border: none;
+	color: #818cf8;
+	font-size: 0.72rem;
+	font-family: inherit;
+	font-weight: 500;
+	cursor: pointer;
+	text-align: left;
+	transition: color 0.15s ease;
+}
+
+.showMore:hover {
+	color: #a5b4fc;
+}
+
+/* ==========================================
+   DELETE BUTTON
+   ========================================== */
+.deleteBtn {
+	width: 100%;
+	padding: 10px 16px;
+	background: rgba(239, 68, 68, 0.1);
+	border: 1px solid rgba(239, 68, 68, 0.25);
+	border-radius: 10px;
+	color: #f87171;
+	font-size: 0.82rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	transition: all 0.2s ease;
+	font-family: inherit;
+}
+
+.deleteBtn:hover {
+	background: rgba(239, 68, 68, 0.2);
+	border-color: rgba(239, 68, 68, 0.4);
+}

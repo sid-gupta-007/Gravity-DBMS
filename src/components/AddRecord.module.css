@@ -137,6 +137,23 @@
 	color: #52525b;
 }
 
+/* Select dropdown styling */
+select.input {
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2371717a' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 14px center;
+	padding-right: 36px;
+	cursor: pointer;
+}
+
+select.input option {
+	background: #18181b;
+	color: #f4f4f5;
+	padding: 8px;
+}
+
 /* Category selector */
 .catRow {
 	display: flex;
