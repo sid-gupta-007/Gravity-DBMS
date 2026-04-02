@@ -113,10 +113,10 @@ export default function App() {
 				}
 			});
 
-			// Sort by similarity descending
-			const results = Array.from(merged.values()).sort(
-				(a, b) => b.similarity - a.similarity
-			);
+			// Sort by similarity descending, filter to 60%+ matches only
+			const results = Array.from(merged.values())
+				.filter((r) => r.similarity >= 0.60)
+				.sort((a, b) => b.similarity - a.similarity);
 
 			setSearchResults(results);
 		} catch (err) {
@@ -284,6 +284,73 @@ export default function App() {
 		[records]
 	);
 
+	// ==========================================
+	// UPDATE RECORD
+	// ==========================================
+	const getTableInfo = (record) => {
+		let table = "students", pkCol = "roll_no";
+		if (record.entity_type === "Course") { table = "courses"; pkCol = "course_id"; }
+		else if (record.entity_type === "Teacher") { table = "teachers"; pkCol = "teacher_id"; }
+		else if (record.entity_type === "Subject") { table = "subjects"; pkCol = "subject_id"; }
+		else if (!["Student", "Course", "Teacher", "Subject"].includes(record.entity_type)) {
+			table = "custom_entities"; pkCol = "id";
+		}
+		return { table, pkCol };
+	};
+
+	const handleUpdateRecord = useCallback(
+		async (id, updates) => {
+			const record = records.find((r) => r.id === id);
+			if (!record) return;
+
+			const { table, pkCol } = getTableInfo(record);
+			const updateData = {};
+
+			if (updates.name !== undefined) updateData.name = updates.name;
+			if (updates.department !== undefined) updateData.department = updates.department;
+			if (updates.courseId !== undefined) updateData.course_id = updates.courseId;
+			if (updates.teacherId !== undefined) updateData.teacher_id = updates.teacherId;
+
+			// Regenerate embedding with new info
+			const newName = updates.name || record.title;
+			let embText = newName;
+			if (record.entity_type === "Course") {
+				const dept = updates.department || record.metadata?.department || "B.Tech";
+				embText = `${dept} ${newName}. A ${dept} degree program in ${newName}.`;
+			} else if (record.entity_type === "Student") {
+				const cId = updates.courseId || record.metadata?.course_id;
+				const cName = records.find((r) => r.id === cId)?.title || "";
+				embText = `Student ${newName}, enrolled in ${cName}.`;
+			} else if (record.entity_type === "Subject") {
+				const cId = updates.courseId || record.metadata?.course_id;
+				const cName = records.find((r) => r.id === cId)?.title || "";
+				embText = `Subject: ${newName}. Taught in the ${cName} program.`;
+			} else if (record.entity_type === "Teacher") {
+				embText = `Professor ${newName}, faculty member.`;
+			}
+
+			try {
+				updateData.embedding = await generateEmbedding(embText);
+				const { error: err } = await supabase
+					.from(table)
+					.update(updateData)
+					.eq(pkCol, id);
+
+				if (err) throw err;
+				await fetchRecords();
+
+				// Refresh selected record with new data
+				const { data: refreshed } = await supabase.rpc("get_all_entities");
+				const updated = (refreshed || []).find((r) => r.id === id);
+				if (updated) setSelectedRecord({ ...updated, category: updated.entity_type });
+			} catch (err) {
+				console.error("Update failed:", err);
+				setError("Failed to update record.");
+			}
+		},
+		[records]
+	);
+
 	return (
 		<div
 			style={{
@@ -352,6 +419,9 @@ export default function App() {
 					onClose={() => setSelectedRecord(null)}
 					onDelete={handleDelete}
 					onNavigate={setSelectedRecord}
+					onUpdate={handleUpdateRecord}
+					courses={coursesList}
+					teachers={teachersList}
 				/>
 			)}
 

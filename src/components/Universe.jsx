@@ -275,12 +275,15 @@ export default function Universe({
 
 		nodes.forEach((node, i) => {
 			const currentTheta = node.theta + time * node.orbitSpeed * 0.2;
+			const isSelected = node.id === selectedRecordId;
 			const isHighlighted =
 				highlightedIds.has(node.id) || node.id === highlightedId;
 			const baseScale = ENTITY_SIZES[node.entity_type] || 0.8;
-			const scale = isHighlighted
-				? baseScale * 2.0
-				: baseScale * ((node.radius / 60) * 0.5 + 0.6);
+			const scale = isSelected
+				? baseScale * 2.5
+				: isHighlighted
+					? baseScale * 2.0
+					: baseScale * ((node.radius / 60) * 0.5 + 0.6);
 
 			node.x =
 				node.center.x +
@@ -296,11 +299,18 @@ export default function Universe({
 			tempObject.updateMatrix();
 			meshRef.current.setMatrixAt(i, tempObject.matrix);
 
-			// Colors: hover → highlight → dim → default
+			// Colors: hover → selected → highlight → dim → default
 			const isHovered = i === hoveredIndex;
 
 			if (isHovered) {
 				tempColor.setHex(0xffffff);
+			} else if (isSelected) {
+				// Bright pulsing glow for selected star
+				const pulse = Math.sin(time * 3) * 0.15 + 1.0;
+				tempColor
+					.copy(node.baseColor)
+					.lerp(new THREE.Color(0xffffff), 0.5)
+					.multiplyScalar(1.8 * pulse);
 			} else if (isHighlighted) {
 				tempColor
 					.copy(node.baseColor)
