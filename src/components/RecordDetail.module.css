@@ -24,22 +24,29 @@
 	border-radius: 4px;
 }
 
-/* Close button */
-.closeBtn {
-	position: absolute;
-	top: 12px;
-	right: 12px;
+.topBar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 12px;
+}
+
+.iconBtn {
 	background: transparent;
 	border: none;
 	color: #71717a;
 	cursor: pointer;
-	font-size: 1.2rem;
 	padding: 4px;
-	transition: color 0.2s ease;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: color 0.2s ease, background 0.2s ease;
 }
 
-.closeBtn:hover {
+.iconBtn:hover {
 	color: #ffffff;
+	background: rgba(255, 255, 255, 0.1);
 }
 
 /* Type badge */
@@ -48,15 +55,16 @@
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.08em;
-	margin-bottom: 8px;
 }
 
 /* Title */
 .title {
 	margin: 0 0 12px 0;
-	font-size: 1.3rem;
-	font-weight: 600;
+	font-size: 1.5rem;
+	font-weight: 300;
 	line-height: 1.3;
+	letter-spacing: 0.15em;
+	text-transform: uppercase;
 }
 
 /* Content description */
@@ -71,8 +79,9 @@
    METADATA BLOCK
    ========================================== */
 .metaBlock {
-	background: rgba(255, 255, 255, 0.04);
-	border-radius: 8px;
+	background: rgba(0, 0, 0, 0.4);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 4px;
 	padding: 12px;
 	margin-bottom: 16px;
 }
@@ -131,15 +140,15 @@
 /* Section (collapsible group) */
 .section {
 	margin-bottom: 4px;
-	border-radius: 8px;
+	border-radius: 4px;
 	overflow: hidden;
-	background: rgba(255, 255, 255, 0.02);
-	border: 1px solid rgba(255, 255, 255, 0.05);
-	transition: border-color 0.2s ease;
+	background: rgba(0, 0, 0, 0.4);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	transition: border-color 0.4s ease;
 }
 
 .section:hover {
-	border-color: rgba(255, 255, 255, 0.1);
+	border-color: rgba(255, 255, 255, 0.3);
 }
 
 .sectionHeader {
@@ -336,19 +345,22 @@ select.editInput option {
 .saveBtn {
 	flex: 1;
 	padding: 8px 16px;
-	background: rgba(110, 231, 183, 0.15);
-	border: 1px solid rgba(110, 231, 183, 0.3);
-	border-radius: 8px;
-	color: #6ee7b7;
+	background: transparent;
+	border: 1px solid #ffffff;
+	border-radius: 4px;
+	color: #ffffff;
 	font-size: 0.8rem;
-	font-weight: 600;
+	font-weight: 400;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
 	font-family: inherit;
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: all 0.4s ease;
 }
 
 .saveBtn:hover:not(:disabled) {
-	background: rgba(110, 231, 183, 0.25);
+	background: #ffffff;
+	color: #000000;
 }
 
 .saveBtn:disabled {
@@ -359,30 +371,35 @@ select.editInput option {
 .cancelBtn {
 	flex: 1;
 	padding: 8px 16px;
-	background: rgba(255, 255, 255, 0.04);
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	border-radius: 8px;
+	background: transparent;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 4px;
 	color: #a1a1aa;
 	font-size: 0.8rem;
-	font-weight: 500;
+	font-weight: 400;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
 	font-family: inherit;
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: all 0.4s ease;
 }
 
 .cancelBtn:hover:not(:disabled) {
-	background: rgba(255, 255, 255, 0.08);
+	border-color: rgba(255, 255, 255, 0.5);
+	color: #ffffff;
 }
 
 .editBtn {
 	width: 100%;
 	padding: 8px 16px;
-	background: rgba(255, 255, 255, 0.04);
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	border-radius: 8px;
+	background: transparent;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 4px;
 	color: #a1a1aa;
 	font-size: 0.8rem;
-	font-weight: 500;
+	font-weight: 400;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
 	font-family: inherit;
 	cursor: pointer;
 	display: flex;
@@ -390,13 +407,12 @@ select.editInput option {
 	justify-content: center;
 	gap: 6px;
 	margin-bottom: 12px;
-	transition: all 0.2s ease;
+	transition: all 0.4s ease;
 }
 
 .editBtn:hover {
-	background: rgba(255, 255, 255, 0.08);
-	color: #f4f4f5;
-	border-color: rgba(255, 255, 255, 0.2);
+	border-color: rgba(255, 255, 255, 0.5);
+	color: #ffffff;
 }
 
 /* ==========================================
@@ -405,23 +421,53 @@ select.editInput option {
 .deleteBtn {
 	width: 100%;
 	padding: 10px 16px;
-	background: rgba(239, 68, 68, 0.1);
-	border: 1px solid rgba(239, 68, 68, 0.25);
-	border-radius: 10px;
+	background: transparent;
+	border: 1px solid rgba(239, 68, 68, 0.4);
+	border-radius: 4px;
 	color: #f87171;
 	font-size: 0.82rem;
-	font-weight: 600;
+	font-weight: 400;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	transition: all 0.2s ease;
+	transition: all 0.4s ease;
 	font-family: inherit;
 }
 
 .deleteBtn:hover {
-	background: rgba(239, 68, 68, 0.2);
-	border-color: rgba(239, 68, 68, 0.4);
+	background: rgba(239, 68, 68, 0.1);
+	border-color: rgba(239, 68, 68, 0.8);
+	color: #fecaca;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+	.container {
+		top: 16px;
+		left: 16px;
+		right: 16px;
+		width: auto;
+		max-height: 40vh;
+		padding: 16px;
+	}
+	
+	.container.collapsed {
+		max-height: none;
+		height: auto;
+	}
+
+	.title {
+		font-size: 1.2rem;
+		margin-bottom: 8px;
+	}
+	
+	.content {
+		font-size: 0.75rem;
+		margin-bottom: 12px;
+	}
 }
 

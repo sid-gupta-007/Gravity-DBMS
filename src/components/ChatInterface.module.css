@@ -39,22 +39,23 @@
 
 .title {
 	color: #ffffff;
-	font-size: 5rem;
-	font-weight: 800;
+	font-size: 4.5rem;
+	font-weight: 300;
 	margin-bottom: 0.5rem;
-	transition: all 0.5s ease;
-	letter-spacing: 0.1em;
-	font-family: "Orbitron", sans-serif;
+	transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+	letter-spacing: 0.6em;
 	text-transform: uppercase;
+	margin-right: -0.6em; /* compensate for letter spacing on last character */
 }
 
 .subtitle {
-	color: #52525b;
-	font-size: 0.85rem;
+	color: #71717a;
+	font-size: 0.75rem;
 	font-weight: 400;
-	margin: 0 0 2rem 0;
-	letter-spacing: 0.05em;
-	transition: all 0.5s ease;
+	margin: 0 0 2.5rem 0;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .titleHidden {
@@ -66,20 +67,26 @@
 /* The Minimalist Input Container */
 .searchBar {
 	width: 100%;
-	height: 56px;
-	border-radius: 9999px;
+	height: 48px;
+	border-radius: 4px;
 	display: flex;
 	align-items: center;
 	padding: 0 12px 0 24px;
 	pointer-events: auto;
-	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
 	transition:
 		width 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-		border-color 0.2s ease;
+		border-color 0.4s ease,
+		background 0.4s ease;
 }
 
 .searchBar:focus-within {
-	border-color: rgba(255, 255, 255, 0.3);
+	border-color: rgba(255, 255, 255, 0.5);
+	background: rgba(0, 0, 0, 0.8);
 }
 
 .searchBarActive {
@@ -99,7 +106,10 @@
 }
 
 .inputField::placeholder {
-	color: #71717a;
+	color: #52525b;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	font-size: 0.75rem;
 }
 
 .inputField:disabled {
@@ -181,5 +191,27 @@
 @keyframes spin {
 	to {
 		transform: rotate(360deg);
+	}
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+	.title {
+		font-size: 2.5rem;
+		letter-spacing: 0.3em;
+		margin-right: -0.3em;
+	}
+	.subtitle {
+		font-size: 0.6rem;
+		margin-bottom: 1.5rem;
+		letter-spacing: 0.1em;
+	}
+	.searchBar {
+		height: 44px;
+		padding: 0 12px 0 16px;
+	}
+	.stageActive {
+		top: 100%;
+		transform: translate(-50%, calc(-100% - 90px)); /* leave space for AddRecord FAB */
 	}
 }

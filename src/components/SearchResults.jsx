@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import styles from "./SearchResults.module.css";
 
 // Updated to use entity types instead of old categories
@@ -17,6 +17,8 @@ export default function SearchResults({
 	onSelectResult,
 	isLoading,
 }) {
+	const [isExpanded, setIsExpanded] = useState(true);
+
 	if (isLoading) {
 		return (
 			<div
@@ -62,15 +64,38 @@ export default function SearchResults({
 	}
 
 	return (
-		<div className={styles.container}>
+		<div className={`${styles.container} ${!isExpanded ? styles.collapsed : ""}`}>
 			<div className={styles.header}>
-				<span className={styles.headerTitle}>Results</span>
-				<span className={styles.headerCount}>
-					{results.length} found
-				</span>
+				<div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+					<span className={styles.headerTitle}>Results</span>
+					<span className={styles.headerCount}>
+						{results.length} found
+					</span>
+				</div>
+				<button 
+					className={styles.toggleBtn}
+					onClick={() => setIsExpanded(!isExpanded)}
+					title={isExpanded ? "Collapse" : "Expand"}
+				>
+					<svg
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						style={{
+							transform: isExpanded ? "rotate(0deg)" : "rotate(180deg)",
+							transition: "transform 0.3s ease"
+						}}
+					>
+						<polyline points="6 9 12 15 18 9" />
+					</svg>
+				</button>
 			</div>
-			<div className={styles.list}>
-				{results.map((result, index) => {
+			{isExpanded && (
+				<div className={styles.list}>
+					{results.map((result, index) => {
 					// Use entity_type for color, fallback to category for backward compat
 					const colorKey =
 						result.entity_type || result.category || "General";
@@ -150,6 +175,7 @@ export default function SearchResults({
 					);
 				})}
 			</div>
+			)}
 		</div>
 	);
 }

@@ -7,12 +7,15 @@ let embedder = null;
  * Uses all-MiniLM-L6-v2 (384-dim vectors).
  * The model (~80MB) is downloaded once and cached by the browser.
  */
-async function getEmbedder() {
+export async function getEmbedder(progressCallback) {
 	if (!embedder) {
 		embedder = await pipeline(
 			"feature-extraction",
 			"Xenova/all-MiniLM-L6-v2",
-			{ dtype: "q8" }
+			{ 
+				dtype: "q8",
+				progress_callback: progressCallback 
+			}
 		);
 	}
 	return embedder;

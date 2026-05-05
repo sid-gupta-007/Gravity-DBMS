@@ -4,13 +4,13 @@ import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import SupernovaEffect from "./SupernovaEffect";
 
-// Entity-type based stellar colors (scientifically inspired)
+// Entity-type based stellar colors (Realistic Stellar Classifications)
 const ENTITY_COLORS = {
-	Course: new THREE.Color("#9db4ff").multiplyScalar(10.0),   // O-Class Blue Giant
-	Subject: new THREE.Color("#baccff").multiplyScalar(10.5),  // A-Class White-Blue
-	Teacher: new THREE.Color("#fff5ec").multiplyScalar(10.5),  // G-Class Yellow (Sun)
-	Student: new THREE.Color("#ffbe7f").multiplyScalar(10.0),  // M-Class Red Dwarf
-	General: new THREE.Color("#6ee7b7").multiplyScalar(10.0),  // Emerald (custom entities)
+	Course: new THREE.Color("#9db4ff").multiplyScalar(8.0),   // O-Class Blue Giant
+	Subject: new THREE.Color("#ffffff").multiplyScalar(8.0),  // A-Class White
+	Teacher: new THREE.Color("#fff4e8").multiplyScalar(8.0),  // F/G-Class Yellow-White
+	Student: new THREE.Color("#ffb56c").multiplyScalar(8.0),  // K/M-Class Orange/Red
+	General: new THREE.Color("#e4e4e7").multiplyScalar(6.0),  // White Dwarf
 };
 
 const ENTITY_SIZES = {
@@ -20,20 +20,21 @@ const ENTITY_SIZES = {
 	Student: 1.0,
 };
 
-// Distinct hues for department labels (generated dynamically)
+// Distinct realistic hues for department labels
 const DEPT_LABEL_COLORS = [
-	"#9db4ff", "#ffbe7f", "#c084fc", "#6ee7b7",
-	"#f9a8d4", "#fbbf24", "#38bdf8", "#a78bfa",
+	"#9db4ff", "#ffffff", "#fff4e8", "#ffb56c",
+	"#baccff", "#ffddb4", "#ff8844", "#e4e4e7",
 ];
 
 const tempObject = new THREE.Object3D();
 const tempColor = new THREE.Color();
 
 // ==========================================
-// DYNAMIC NODE CONNECTIONS (FOREIGN KEYS)
+// DYNAMIC NODE CONNECTIONS (RAYS TO RELATIONS & DOMAINS)
 // ==========================================
-function RelationLines({ nodes, highlightedIds, hoveredId }) {
+function RelationLines({ nodes, highlightedIds, hoveredId, departmentCenters }) {
 	const lineRef = useRef();
+	const matRef = useRef();
 
 	const { positions, colors, count, activePairs } = useMemo(() => {
 		if (!nodes || nodes.length < 2)
@@ -70,27 +71,41 @@ function RelationLines({ nodes, highlightedIds, hoveredId }) {
 						pairs.push({ a: activeNode, b: n });
 				});
 			}
+
+			// Add Ray to the Domain (Department Center)
+			const dept = activeNode.department;
+			if (dept && departmentCenters && departmentCenters[dept]) {
+				const centerInfo = departmentCenters[dept];
+				const centerNode = {
+					x: centerInfo.position.x,
+					y: centerInfo.position.y,
+					z: centerInfo.position.z,
+					entity_type: "General" // Fallback color
+				};
+				// To give the center node the actual department color:
+				centerNode.customColor = new THREE.Color(centerInfo.color).multiplyScalar(4.0);
+				pairs.push({ a: activeNode, b: centerNode });
+			}
 		});
 
 		const pos = new Float32Array(pairs.length * 6);
 		const col = new Float32Array(pairs.length * 6);
 
 		pairs.forEach((pair, idx) => {
-			const colorA =
-				ENTITY_COLORS[pair.a.entity_type] || ENTITY_COLORS.General;
-			const colorB =
-				ENTITY_COLORS[pair.b.entity_type] || ENTITY_COLORS.General;
+			const colorA = pair.a.customColor || ENTITY_COLORS[pair.a.entity_type] || ENTITY_COLORS.General;
+			const colorB = pair.b.customColor || ENTITY_COLORS[pair.b.entity_type] || ENTITY_COLORS.General;
 
-			col[idx * 6] = colorA.r * 0.8;
-			col[idx * 6 + 1] = colorA.g * 0.8;
-			col[idx * 6 + 2] = colorA.b * 0.8;
-			col[idx * 6 + 3] = colorB.r * 0.8;
-			col[idx * 6 + 4] = colorB.g * 0.8;
-			col[idx * 6 + 5] = colorB.b * 0.8;
+			// Make the lines very subtle
+			col[idx * 6] = colorA.r * 0.3;
+			col[idx * 6 + 1] = colorA.g * 0.3;
+			col[idx * 6 + 2] = colorA.b * 0.3;
+			col[idx * 6 + 3] = colorB.r * 0.3;
+			col[idx * 6 + 4] = colorB.g * 0.3;
+			col[idx * 6 + 5] = colorB.b * 0.3;
 		});
 
 		return { positions: pos, colors: col, count: pairs.length, activePairs: pairs };
-	}, [nodes, highlightedIds, hoveredId]);
+	}, [nodes, highlightedIds, hoveredId, departmentCenters]);
 
 	useFrame(() => {
 		if (!lineRef.current || count === 0) return;
@@ -127,6 +142,7 @@ function RelationLines({ nodes, highlightedIds, hoveredId }) {
 				/>
 			</bufferGeometry>
 			<lineBasicMaterial
+				ref={matRef}
 				vertexColors
 				transparent
 				opacity={0.15}
@@ -170,10 +186,10 @@ function DashTooltip({ node, position }) {
 
 	const UI_COLORS = {
 		Course: "#9db4ff",
-		Subject: "#baccff",
-		Teacher: "#fff5ec",
-		Student: "#ffbe7f",
-		General: "#6ee7b7",
+		Subject: "#ffffff",
+		Teacher: "#fff4e8",
+		Student: "#ffb56c",
+		General: "#e4e4e7",
 	};
 
 	return (
@@ -186,17 +202,17 @@ function DashTooltip({ node, position }) {
 			<div
 				className="liquid-glass"
 				style={{
-					background: "rgba(9, 9, 11, 0.75)",
+					background: "rgba(0, 0, 0, 0.8)",
 					backdropFilter: "blur(16px)",
-					border: "1px solid rgba(255, 255, 255, 0.15)",
-					borderRadius: "12px",
+					border: "1px solid rgba(255, 255, 255, 0.08)",
+					borderRadius: "4px",
 					padding: "12px 16px",
 					color: "#f4f4f5",
 					minWidth: "180px",
-					boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+					boxShadow: "0 10px 40px rgba(0, 0, 0, 0.8)",
 					transform: "translateY(-60px)",
 					transition: "all 0.2s ease",
-					fontFamily: "ui-sans-serif, system-ui, sans-serif",
+					fontFamily: "inherit",
 				}}
 			>
 				<div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
@@ -241,8 +257,8 @@ function DashTooltip({ node, position }) {
 					</>
 				)}
 				
-				<div style={{ marginTop: "10px", fontSize: "0.65rem", color: "#6ee7b7", textAlign: "center", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
-					<div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#6ee7b7", animation: "pulse 2s infinite" }} />
+				<div style={{ marginTop: "10px", fontSize: "0.65rem", color: "#ffffff", textAlign: "center", fontWeight: 300, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", letterSpacing: "0.15em" }}>
+					<div style={{ width: "4px", height: "4px", borderRadius: "50%", background: "#ffffff" }} />
 					CLICK TO EXPLORE
 				</div>
 			</div>
@@ -352,8 +368,14 @@ export default function Universe({
 		return new Set(searchResults.map((r) => r.id));
 	}, [searchResults]);
 
-	// Animate orbits
+	// Animate orbits and whole universe rotation
 	useFrame((state) => {
+		if (groupRef.current) {
+			// Slow, majestic rotation of the entire universe
+			groupRef.current.rotation.y = state.clock.getElapsedTime() * 0.02;
+			groupRef.current.rotation.x = Math.sin(state.clock.getElapsedTime() * 0.01) * 0.1;
+		}
+
 		if (!meshRef.current || nodes.length === 0) return;
 		const time = state.clock.getElapsedTime();
 
@@ -389,12 +411,11 @@ export default function Universe({
 			if (isHovered) {
 				tempColor.setHex(0xffffff);
 			} else if (isSelected) {
-				// Bright pulsing glow for selected star
-				const pulse = Math.sin(time * 3) * 0.15 + 1.0;
+				// Bright selected star (no pulse)
 				tempColor
 					.copy(node.baseColor)
 					.lerp(new THREE.Color(0xffffff), 0.5)
-					.multiplyScalar(1.8 * pulse);
+					.multiplyScalar(1.5);
 			} else if (isHighlighted) {
 				tempColor
 					.copy(node.baseColor)
@@ -420,11 +441,17 @@ export default function Universe({
 			state.controls.enabled = false;
 			const targetNode = nodes.find((n) => n.id === selectedRecordId);
 			if (targetNode) {
-				const targetPos = new THREE.Vector3(
+				const localPos = new THREE.Vector3(
 					targetNode.x,
 					targetNode.y,
 					targetNode.z
 				);
+				// Convert local position to world position using the group's matrix
+				const targetPos = localPos.clone();
+				if (groupRef.current) {
+					targetPos.applyMatrix4(groupRef.current.matrixWorld);
+				}
+				
 				const camPos = targetPos
 					.clone()
 					.add(new THREE.Vector3(10, 5, 20));
@@ -500,32 +527,43 @@ export default function Universe({
 			{showLabels &&
 				Object.entries(departmentCenters).map(([dept, info], i) => (
 					<mesh key={dept} position={info.position}>
-						<sphereGeometry args={[3, 32, 32]} />
+						{/* Core Sun */}
+						<sphereGeometry args={[1.5, 32, 32]} />
 						<meshBasicMaterial
 							color={info.color}
 							transparent
-							opacity={0.6}
+							opacity={0.9}
 						/>
+						{/* Glowing Corona */}
+						<mesh>
+							<sphereGeometry args={[2.5, 32, 32]} />
+							<meshBasicMaterial
+								color={info.color}
+								transparent
+								opacity={0.15}
+								blending={THREE.AdditiveBlending}
+							/>
+						</mesh>
 						<Html
 							position={[0, 7, 0]}
 							center
 							transform
-							distanceFactor={40}
+							distanceFactor={8}
 							style={{
 								pointerEvents: "none",
 								color: "#fff",
-								fontSize: "0.9rem",
-								fontWeight: "800",
-								fontFamily: '"Orbitron", sans-serif',
+								fontSize: "4rem",
+								fontWeight: "300",
+								fontFamily: 'inherit',
 								textTransform: "uppercase",
-								letterSpacing: "0.15em",
+								letterSpacing: "0.2em",
 								whiteSpace: "nowrap",
-								background: "rgba(0, 0, 0, 0.4)",
-								padding: "6px 16px",
+								background: "rgba(0, 0, 0, 0.6)",
+								padding: "20px 60px",
 								borderRadius: "10px",
-								border: `1px solid ${info.color}33`,
+								border: `5px solid ${info.color}33`,
 								backdropFilter: "blur(8px)",
-								boxShadow: "0 8px 32px rgba(0, 0, 0, 0.8)",
+								boxShadow: "0 40px 160px rgba(0, 0, 0, 0.8)",
 								textAlign: "center",
 								zIndex: 1,
 							}}
@@ -552,6 +590,7 @@ export default function Universe({
 				nodes={nodes}
 				highlightedIds={highlightedIds}
 				hoveredId={hoveredNode?.id}
+				departmentCenters={departmentCenters}
 			/>
 
 			{hoveredNode && (
